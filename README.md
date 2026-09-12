@@ -1,6 +1,24 @@
-# 拉斯维加斯 · 骰子之夜 V6
+# 拉斯维加斯 · 骰子之夜 V7
 
 中文四人桌游原型：1名玩家与3名电脑、2名玩家与2名电脑、或4名玩家同屏轮流。无远程联机、无真实金钱交易、电脑不调用语言模型。
+
+本版新增「霓虹下的第一局」互动教学：扮演牛仔，由月兔带领完成24步实操，支持退出续学。
+
+[在线游玩](https://kevinkaslana093.github.io/vegas-dice-night/) · [下载离线版](https://github.com/KevinKaslana093/vegas-dice-night/releases/latest)
+
+推送到本仓库 `main` 分支后，GitHub Actions 会先执行规则测试和文件检查，再将 `dist/` 的游戏文件发布到 GitHub Pages。托管配置、测试和工程文档不进入网页发布目录。
+
+## 本地打开
+
+需要 Node.js 22 或更新版本来运行检查，游戏本身直接在浏览器中运行。
+
+```sh
+npm test
+npm run build
+python -m http.server 4317 --directory dist
+```
+
+打开 `http://localhost:4317`。也可使用任意静态网站服务器托管 `dist/`；模块版需要通过 HTTP 打开。源码已包含角色插画、音效和粒子，无需配置 API 密钥。
 
 ## 此版玩法
 

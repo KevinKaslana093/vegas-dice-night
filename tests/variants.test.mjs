@@ -15,11 +15,11 @@ test('jackpot gives actual individual banknotes to one eligible winner',()=>{con
 test('seven uses distance to seven then first arrival after removing raw ties',()=>{assert.deepEqual(outcome(t('seven',[8,6,7,4])).awards.map(a=>a.player),[2,0,1]);assert.deepEqual(outcome(t('seven',[7,7,6,2])).awards.map(a=>a.player),[2,3]);});
 test('last uses most recent placement, not number of dice or first arrival',()=>{assert.deepEqual(outcome(t('last',[5,2,1,0],[1,2,3,0],[8,9,3,0])).awards.map(a=>a.player),[1,0,2]);});
 test('gate excludes counts below three before resolving ties',()=>{assert.deepEqual(outcome(t('gate',[2,2,4,3])).ties,[]);assert.deepEqual(outcome(t('gate',[2,2,4,3])).awards.map(a=>a.player),[2,3]);});
-test('free unlimited skip preserves dice, all investments, cash and round; rotates normally',()=>{
+test('skip costs one chip, preserves dice and investments, and fails when empty',()=>{
  const g=createGame(4,rng(8));const tables=JSON.stringify(g.tables),deckBefore=JSON.stringify(g.deck);
  assert.equal(skipTurn(g),false);
- for(let i=0;i<40;i++){assert.equal(g.turn,i%4);rollDice(g,rng(i));assert(skipTurn(g));assert.equal(g.phase,'ready');assert.equal(g.roll.length,0);assert.equal(g.round,1);assert.equal(JSON.stringify(g.tables),tables);assert.equal(JSON.stringify(g.deck),deckBefore);assert(g.players.every(p=>p.left===8&&p.cash===0));assert(validSave(g));}
- assert(g.players.every(p=>p.skips===10));
+ for(let i=0;i<8;i++){assert.equal(g.turn,i%4);rollDice(g,rng(i));assert(skipTurn(g));assert.equal(g.phase,'ready');assert.equal(g.roll.length,0);assert.equal(g.round,1);assert.equal(JSON.stringify(g.tables),tables);assert.equal(JSON.stringify(g.deck),deckBefore);assert(g.players.every(p=>p.left===8&&p.cash===0));assert(validSave(g));}
+ assert(g.players.every(p=>p.skips===2&&p.chips===0));rollDice(g);const before=JSON.stringify(g);assert.equal(skipTurn(g),false);assert.equal(JSON.stringify(g),before);
 });
 test('skip bypasses exhausted players and sole remaining player immediately rolls again',()=>{const g=createGame(4,Math.random,{rules:'classic'});for(let i=0;i<3;i++){rollDice(g,()=>.1);placeDice(g,1);}assert.equal(g.turn,3);rollDice(g,()=>.6);skipTurn(g);assert.equal(g.turn,3);assert.equal(g.players[3].left,8);assert.equal(g.phase,'ready');rollDice(g,()=>.9);assert(g.roll.every(v=>v===6));});
 test('preview preserves state and agrees with committed first/last arrival',()=>{const g=createGame();rollDice(g,()=>0);const before=JSON.stringify(g),expected=outcome(previewTable(g,1));assert.equal(JSON.stringify(g),before);placeDice(g,1);assert.deepEqual(outcome(g.tables[0]),expected);});

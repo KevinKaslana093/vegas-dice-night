@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,nextRound,rollDice,placeDice,skipTurn,outcome,previewTable,botChoice,botShouldSkip,validSave,deck,sum,SPECIALS} from '../dist/core.mjs';
+import {createGame,nextRound,rollDice,placeDice,skipTurn,outcome,previewTable,botChoice,botShouldSkip,validSave,deck,sum,SPECIALS,miniAction,miniBotAction} from '../dist/core.mjs';
 const rng=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
 const t=(effect,counts,first=[1,2,3,4],last=[1,2,3,4])=>({effect,counts,first,last,notes:[80000,30000,10000]});
 test('special casino effects vary between seeded rounds but remain fixed during turns',()=>{
@@ -21,7 +21,7 @@ test('free unlimited skip preserves dice, all investments, cash and round; rotat
  for(let i=0;i<40;i++){assert.equal(g.turn,i%4);rollDice(g,rng(i));assert(skipTurn(g));assert.equal(g.phase,'ready');assert.equal(g.roll.length,0);assert.equal(g.round,1);assert.equal(JSON.stringify(g.tables),tables);assert.equal(JSON.stringify(g.deck),deckBefore);assert(g.players.every(p=>p.left===8&&p.cash===0));assert(validSave(g));}
  assert(g.players.every(p=>p.skips===10));
 });
-test('skip bypasses exhausted players and sole remaining player immediately rolls again',()=>{const g=createGame(4);for(let i=0;i<3;i++){rollDice(g,()=>.1);placeDice(g,1);}assert.equal(g.turn,3);rollDice(g,()=>.6);skipTurn(g);assert.equal(g.turn,3);assert.equal(g.players[3].left,8);assert.equal(g.phase,'ready');rollDice(g,()=>.9);assert(g.roll.every(v=>v===6));});
+test('skip bypasses exhausted players and sole remaining player immediately rolls again',()=>{const g=createGame(4,Math.random,{rules:'classic'});for(let i=0;i<3;i++){rollDice(g,()=>.1);placeDice(g,1);}assert.equal(g.turn,3);rollDice(g,()=>.6);skipTurn(g);assert.equal(g.turn,3);assert.equal(g.players[3].left,8);assert.equal(g.phase,'ready');rollDice(g,()=>.9);assert(g.roll.every(v=>v===6));});
 test('preview preserves state and agrees with committed first/last arrival',()=>{const g=createGame();rollDice(g,()=>0);const before=JSON.stringify(g),expected=outcome(previewTable(g,1));assert.equal(JSON.stringify(g),before);placeDice(g,1);assert.deepEqual(outcome(g.tables[0]),expected);});
 test('three modes, sorted prizes each round, randomized skips: 300 complete games',()=>{
  for(const rules of ['half','all','classic'])for(let seed=1;seed<=100;seed++){
@@ -30,10 +30,10 @@ test('three modes, sorted prizes each round, randomized skips: 300 complete game
    assert(g.tables.every((t,i)=>i===0||sum(g.tables[i-1].notes)<=sum(t.notes)));
    assert(g.tables.every(t=>t.notes.length===2));
    const effects=g.tables.map(t=>t.effect);
-   if(rules==='all')assert.deepEqual([...effects].sort(),[...SPECIALS].sort());
+   if(rules==='all')assert(effects.length===6&&new Set(effects).size===6&&effects.every(e=>SPECIALS.includes(e)));
    else if(rules==='half'){assert.equal(new Set(effects.slice(0,3)).size,3);assert(effects.slice(0,3).every(e=>SPECIALS.includes(e)));assert.deepEqual(effects.slice(3),['classic','classic','classic']);}
    else assert.deepEqual(effects,Array(6).fill('classic'));
-   while(['ready','choose'].includes(g.phase)){if(g.phase==='ready')rollDice(g,r);if(botShouldSkip(g,r))skipTurn(g);else placeDice(g,botChoice(g,r));assert(validSave(g));assert(++moves<=160);}
+   while(['ready','choose','minigame'].includes(g.phase)){if(g.phase==='minigame'){assert(miniAction(g,miniBotAction(g),r));assert(validSave(g));continue;}if(g.phase==='ready')rollDice(g,r);if(botShouldSkip(g,r))skipTurn(g);else placeDice(g,botChoice(g,r));assert(validSave(g));assert(++moves<=160);}
    assert.equal(sum(g.players.map(p=>p.cash))+sum(g.deck),sum(deck()));assert.equal(g.deck.length+sum(g.players.map(p=>p.notes)),54);
    if(round<4)nextRound(g,r);
   }

@@ -10,11 +10,11 @@ test('all tied counts eliminated, even below first place',()=>{
   assert.deepEqual(outcome({counts:[2,2,2,1],notes:[90000]}).ties,[0,1,2]);
 });
 test('one note per winner, leftovers recycled',()=>{const o=outcome({counts:[3,2,1,0],notes:[80000,20000]});assert.equal(o.awards.length,2);assert.equal(o.awards[1].player,1);assert.deepEqual(o.unused,[]);assert.equal(outcome({counts:[0,0,0,0],notes:[60000]}).unused[0],60000);});
-test('placement consumes every matching die; illegal actions do not mutate',()=>{const g=createGame();rollDice(g,()=>.4);const before=JSON.stringify(g);assert.equal(placeDice(g,6),false);assert.equal(JSON.stringify(g),before);assert.equal(rollDice(g),false);assert.equal(placeDice(g,3),true);assert.equal(g.tables[2].counts[0],8);assert.equal(g.players[0].left,0);assert.equal(g.turn,1);});
+test('placement consumes every matching die; illegal actions do not mutate',()=>{const g=createGame(1,Math.random,{rules:'classic'});rollDice(g,()=>.4);const before=JSON.stringify(g);assert.equal(placeDice(g,6),false);assert.equal(JSON.stringify(g),before);assert.equal(rollDice(g),false);assert.equal(placeDice(g,3),true);assert.equal(g.tables[2].counts[0],8);assert.equal(g.players[0].left,0);assert.equal(g.turn,1);});
 test('same money resolves by note count then shared winners',()=>{const g=createGame();g.players.forEach(p=>p.cash=50000);g.players[1].notes=3;assert.deepEqual(winners(g),[1]);g.players[3].notes=3;assert.deepEqual(winners(g),[1,3]);});
 test('1000 seeded complete games: dice, currency, persistence and turn invariants',()=>{
   for(let seed=1;seed<=1000;seed++){
-    const r=rng(seed),g=createGame(1,r),bank=sum(deck());let moves=0;
+    const r=rng(seed),g=createGame(1,r,{rules:'classic'}),bank=sum(deck());let moves=0;
     for(let round=1;round<=4;round++){
       assert.equal(g.turn,round-1);assert(g.tables.every(t=>t.notes.length===2&&sum(t.notes)>=20000));
       while(['ready','choose'].includes(g.phase)){

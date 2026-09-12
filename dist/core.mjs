@@ -15,15 +15,17 @@ export const sum=a=>a.reduce((x,y)=>x+y,0);
 export function deck(rng=Math.random){const a=[6,8,8,6,6,5,5,5,5].flatMap((n,i)=>Array(n).fill((i+1)*10000));for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 export function createGame(humans=1,rng=Math.random,options={}){
   const rules=['half','all','classic'].includes(options.rules)?options.rules:'half';
-  const g={v:2,round:0,humans,rules,move:0,players:NAMES.map(name=>({name,cash:0,notes:0,left:8,skips:0})),deck:deck(rng),tables:[],turn:0,roll:[],phase:'ready',history:[],settlements:[]};nextRound(g);return g;
+  const g={v:3,round:0,humans,rules,move:0,players:NAMES.map(name=>({name,cash:0,notes:0,left:8,skips:0})),deck:deck(rng),tables:[],turn:0,roll:[],phase:'ready',history:[],settlements:[]};nextRound(g,rng);return g;
 }
 function log(g,s){g.history.unshift(s);g.history=g.history.slice(0,48);}
-export function nextRound(g){
+export function nextRound(g,rng=Math.random){
   if(g.round>=4)throw Error('Game finished');g.round++;g.turn=(g.round-1)%4;g.roll=[];g.phase='ready';g.settlements=[];g.move=0;
   g.players.forEach(p=>{p.left=8;p.skips=0;});
-  const purses=Array.from({length:6},()=>{const notes=[];while(sum(notes)<50000){if(!g.deck.length)throw Error('Empty deck');notes.push(g.deck.shift());}return notes.sort((a,b)=>b-a);}).sort((a,b)=>sum(a)-sum(b)||a[0]-b[0]);
-  g.tables=CASINOS.map((name,i)=>({name,face:i+1,notes:purses[i],effect:g.rules==='all'||(g.rules==='half'&&i<3)?SPECIALS[i]:'classic',counts:[0,0,0,0],first:[0,0,0,0],last:[0,0,0,0]}));
-  log(g,`第 ${g.round} 轮 · 奖金已排序 · ${g.players[g.turn].name}先手`);
+  const purses=Array.from({length:6},()=>{if(g.deck.length<2)throw Error('Empty deck');return g.deck.splice(0,2).sort((a,b)=>b-a);}).sort((a,b)=>sum(a)-sum(b)||a[0]-b[0]);
+  const effects=[...SPECIALS];
+  for(let i=effects.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[effects[i],effects[j]]=[effects[j],effects[i]];}
+  g.tables=CASINOS.map((name,i)=>({name,face:i+1,notes:purses[i],effect:g.rules==='all'||(g.rules==='half'&&i<3)?effects[i]:'classic',counts:[0,0,0,0],first:[0,0,0,0],last:[0,0,0,0]}));
+  log(g,`第 ${g.round} 轮 · 每桌2张钞票${g.rules==='classic'?'':' · 特殊效果已重新抽取'} · ${g.players[g.turn].name}先手`);
 }
 export function rollDice(g,rng=Math.random){if(g.phase!=='ready')return false;g.roll=Array.from({length:g.players[g.turn].left},()=>1+Math.floor(rng()*6));g.phase='choose';return true;}
 export function outcome(t){
@@ -65,12 +67,12 @@ export function botShouldSkip(g,rng=Math.random){
   const own=o=>sum(o.awards.filter(a=>a.player===g.turn).map(a=>a.amount));return own(after)<=own(before)&&rng()<.45;
 }
 export function validSave(g){
-  if(!g||g.v!==2||![1,2,3,4].includes(g.round)||![1,2,4].includes(g.humans)||!['half','all','classic'].includes(g.rules)||!['ready','choose','settled','finished'].includes(g.phase))return false;
+  if(!g||g.v!==3||![1,2,3,4].includes(g.round)||![1,2,4].includes(g.humans)||!['half','all','classic'].includes(g.rules)||!['ready','choose','settled','finished'].includes(g.phase))return false;
   const int=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max,note=n=>int(n,90000)&&n>=10000&&n%10000===0;
   if(!int(g.turn,3)||!int(g.move,32)||!Array.isArray(g.players)||g.players.length!==4||!Array.isArray(g.tables)||g.tables.length!==6)return false;
   if(!g.players.every(p=>typeof p.name==='string'&&p.name.length<30&&int(p.left,8)&&int(p.cash,3000000)&&int(p.notes,54)&&int(p.skips,Number.MAX_SAFE_INTEGER)))return false;
   if(!Array.isArray(g.deck)||!g.deck.every(note)||!Array.isArray(g.roll)||!g.roll.every(n=>int(n,6)&&n>0))return false;
-  if(!g.tables.every((t,i)=>t.face===i+1&&t.name===CASINOS[i]&&Object.hasOwn(EFFECTS,t.effect)&&Array.isArray(t.notes)&&t.notes.length>0&&t.notes.every(note)&&['counts','first','last'].every(key=>Array.isArray(t[key])&&t[key].length===4&&t[key].every(n=>int(n,key==='counts'?8:32)))))return false;
+  if(!g.tables.every((t,i)=>t.face===i+1&&t.name===CASINOS[i]&&Object.hasOwn(EFFECTS,t.effect)&&Array.isArray(t.notes)&&t.notes.length===2&&t.notes.every(note)&&['counts','first','last'].every(key=>Array.isArray(t[key])&&t[key].length===4&&t[key].every(n=>int(n,key==='counts'?8:32)))))return false;
   if(!g.players.every((p,i)=>sum(g.tables.map(t=>t.counts[i]))+p.left===8))return false;
   if(g.phase==='choose'&&(g.roll.length!==g.players[g.turn].left||!g.roll.length))return false;
   if(g.phase==='ready'&&(g.roll.length||g.players[g.turn].left===0))return false;

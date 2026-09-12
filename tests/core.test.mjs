@@ -16,14 +16,14 @@ test('1000 seeded complete games: dice, currency, persistence and turn invariant
   for(let seed=1;seed<=1000;seed++){
     const r=rng(seed),g=createGame(1,r),bank=sum(deck());let moves=0;
     for(let round=1;round<=4;round++){
-      assert.equal(g.turn,round-1);assert(g.tables.every(t=>sum(t.notes)>=50000));
+      assert.equal(g.turn,round-1);assert(g.tables.every(t=>t.notes.length===2&&sum(t.notes)>=20000));
       while(['ready','choose'].includes(g.phase)){
         assert(g.players[g.turn].left>0);if(g.phase==='ready')rollDice(g,r);
         assert(validSave(g));assert(placeDice(g,botChoice(g,r)));assert(validSave(g));assert(++moves<=128);
       }
       assert.equal(sum(g.players.map(p=>p.cash))+sum(g.deck),bank);
       assert.equal(g.deck.length+sum(g.players.map(p=>p.notes)),54);
-      if(round<4)nextRound(g);
+      if(round<4)nextRound(g,r);
     }
     assert.equal(g.phase,'finished');assert(winners(g).length>0);
   }

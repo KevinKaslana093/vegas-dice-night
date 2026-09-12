@@ -1,5 +1,6 @@
-import {createGame,rollDice,placeDice,skipTurn,useSkill,miniAction,outcome,previewTable,NAMES,COLORS,EFFECTS} from './core.mjs';
+import {createGame,rollDice,placeDice,skipTurn,useSkill,miniAction,outcome,previewTable,claimChange,NAMES,COLORS,EFFECTS} from './core.mjs';
 import {CINEMA_ASSETS} from './cinema.mjs';
+import {createClaimFeedback,claimMarkup} from './claims.mjs';
 
 // A separate, reproducible practice table. Every move uses the normal rules.
 export const LESSON_STEPS=[
@@ -33,12 +34,12 @@ const lessonBot=(g,face,values)=>{lessonRoll(g,values);placeDice(g,face);};
 export function createLesson(progress=0){
  let seed=1;const rng=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
  const g=createGame(1,rng,{hero:1,skills:true,rules:'half'});g.tables[0].effect='low';g.tables[1].effect='blackjack';g.tables[2].effect='reverse';
- const l={g,step:0,selected:0};
+ const l={g,step:0,selected:0,notice:null};
  for(let i=0;i<Math.min(Math.max(Number.isInteger(progress)?progress:0,0),LESSON_STEPS.length-1);i++)advanceLesson(l,LESSON_STEPS[l.step][0]);
  return l;
 }
 export function advanceLesson(l,action){
- const s=l.step,g=l.g;if(action!==LESSON_STEPS[s]?.[0]||action==='finish')return false;
+ const s=l.step,g=l.g,beforeSix=outcome(g.tables[5]),previous=g.lastEvent;if(action!==LESSON_STEPS[s]?.[0]||action==='finish')return false;
  if(s===2)lessonRoll(g,[6,6,6,1,2,3,4,5]);
  if(s===3)l.selected=6;
  if(s===4){placeDice(g,6);l.selected=0;}
@@ -53,10 +54,12 @@ export function advanceLesson(l,action){
  if(s===18)miniAction(g,'draw',()=>.99);
  if(s===19)miniAction(g,'bank');
  if(s===20)miniAction(g,'continue');
+ if(s===5)l.notice=claimChange(g.tables[5],3,beforeSix);else if(previous!==g.lastEvent)l.notice=g.lastEvent;
  l.step++;return true;
 }
 
-export function createTutorial({cinema,die,onExit}){
+export function createTutorial({cinema,die,prefs=()=>({motion:true,fast:false}),onExit}){
+ const feedback=createClaimFeedback({prefs,hero:()=>1});
  const key='vegas-night-tutorial-v1';let lesson,root,playing=false;
  const readProgress=()=>{try{return JSON.parse(localStorage.getItem(key))?.step||0;}catch{return 0;}};
  const save=()=>{try{localStorage.setItem(key,JSON.stringify({step:lesson.step,complete:lesson.step===23}));}catch{}};
@@ -70,20 +73,20 @@ export function createTutorial({cinema,die,onExit}){
  }
  function lSelected(n){return lesson.selected===n;}
  function render(){const l=lesson,g=l.g,s=LESSON_STEPS[l.step],focus=s[5];
-  root.innerHTML=`<div class="lesson-header"><div><span>PROLOGUE / 00</span><h1>霓虹下的第一局</h1></div><button data-lesson="exit">退出教学</button></div><div class="lesson-progress"><span>${s[1]}</span><div><i style="width:${(l.step+1)/LESSON_STEPS.length*100}%"></i></div><small>${l.step+1} / ${LESSON_STEPS.length}</small></div><div class="lesson-scroll"><div class="lesson-players ${focus==='players'?'lesson-focus':''}" data-focus="players">${g.players.map((p,i)=>`<div style="--pc:${COLORS[i]}" class="${i===1?'lesson-you':''}"><img src="${CINEMA_ASSETS.portraits[i]}" alt=""><span>${['◆','●','■','▲'][i]} ${i===1?'你 · 牛仔':NAMES[i]}<small>${p.left}骰 · ${p.chips}筹码</small></span></div>`).join('')}</div><section class="lesson-board" aria-label="练习赌场，按1至6顺时针排列"><div class="lesson-orbit"></div><div class="lesson-center"><span>GUIDED TABLE</span><b>${l.step>=21?'本轮结算':'月兔的练习桌'}</b><small>固定骰子 · 不影响正式存档</small></div>${g.tables.map(actual=>{const t=l.selected===actual.face?previewTable(g,actual.face):actual,o=outcome(t);return `<article data-focus="table${t.face}" class="lesson-table lt-${t.face} ${focus==='table'+t.face||l.selected===t.face?'lesson-focus':''}"><header><b>${t.face}</b><span>${t.name}<small>总额 ${fmt(t.notes[0]+t.notes[1])}</small></span></header><div class="lesson-notes">${t.notes.map((n,j)=>{const award=o.awards[j];return `<span>${fmt(n)}<small style="color:${award?COLORS[award.player]:''}">${award?(award.player===1?'你':NAMES[award.player].slice(0,2))+(l.step>=21?'获得':'暂领'):'待分配'}</small></span>`;}).join('')}</div><div class="lesson-counts">${t.counts.map((n,i)=>`<span style="color:${COLORS[i]}" class="${o.ties.includes(i)?'lesson-tied':''}">${['◆','●','■','▲'][i]} ${n||'–'}${t.bonus[i]?'+'+t.bonus[i]:''}</span>`).join('')}</div><footer>${l.selected===t.face?'下注预览 · ':''}${EFFECTS[t.effect].name}${o.ties.length?' · 撞数出局':''}</footer></article>`;}).join('')}</section><section class="lesson-controls ${focus==='controls'||focus==='payout'?'lesson-focus':''}" data-focus="controls">${controls()}</section></div><section class="lesson-coach" aria-label="月兔小姐的教学提示"><div class="lesson-portrait"><img src="${CINEMA_ASSETS.portraits[3]}" alt="月兔小姐"><span>你的领桌人</span></div><div class="lesson-dialogue"><div class="lesson-speaker">月兔小姐 <small>GUIDE</small></div><h2>${s[2]}</h2><p aria-live="polite">${s[3]}</p><div class="lesson-reply">${s[4]?actionButton(s[0],s[4]):'<span class="lesson-instruction">◇ 点击上方发光的操作继续</span>'}${l.step===23?'<button class="quiet" data-lesson="replay">重新练习</button>':''}</div><span class="lesson-help" role="status"></span></div></section>`;
+  root.innerHTML=`<div class="lesson-header"><div><span>PROLOGUE / 00</span><h1>霓虹下的第一局</h1></div><button data-lesson="exit">退出教学</button></div><div class="lesson-progress"><span>${s[1]}</span><div><i style="width:${(l.step+1)/LESSON_STEPS.length*100}%"></i></div><small>${l.step+1} / ${LESSON_STEPS.length}</small></div><div class="lesson-scroll"><div class="lesson-players ${focus==='players'?'lesson-focus':''}" data-focus="players">${g.players.map((p,i)=>`<div style="--pc:${COLORS[i]}" class="${i===1?'lesson-you':''}"><img src="${CINEMA_ASSETS.portraits[i]}" alt=""><span>${['◆','●','■','▲'][i]} ${i===1?'你 · 牛仔':NAMES[i]}<small>${p.left}骰 · ${p.chips}筹码</small></span></div>`).join('')}</div><section class="lesson-board" aria-label="练习赌场，按1至6顺时针排列"><div class="lesson-orbit"></div><div class="lesson-center"><span>GUIDED TABLE</span><b>${l.step>=21?'本轮结算':'月兔的练习桌'}</b><small>固定骰子 · 不影响正式存档</small></div>${g.tables.map(actual=>{const t=l.selected===actual.face?previewTable(g,actual.face):actual,o=outcome(t);return `<article data-focus="table${t.face}" class="lesson-table lt-${t.face} ${focus==='table'+t.face||l.selected===t.face?'lesson-focus':''}"><header><b>${t.face}</b><span>${t.name}<small>总额 ${fmt(t.notes[0]+t.notes[1])}</small></span></header><div class="lesson-notes">${t.notes.map((n,j)=>{const award=o.awards[j];return `<span data-note="${j}">${fmt(n)}<small style="color:${award?COLORS[award.player]:''}">${award?(award.player===1?'你':NAMES[award.player].slice(0,2))+(l.step>=21?'获得':'暂领'):'待分配'}</small></span>`;}).join('')}</div><div class="lesson-counts">${t.counts.map((n,i)=>`<span data-player="${i}" style="color:${COLORS[i]}" class="${o.ties.includes(i)?'lesson-tied':''}">${['◆','●','■','▲'][i]} ${n||'–'}${t.bonus[i]?'+'+t.bonus[i]:''}</span>`).join('')}</div><footer>${l.selected===t.face?'下注预览 · ':''}${EFFECTS[t.effect].name}${o.ties.length?' · 撞数出局':''}</footer></article>`;}).join('')}</section><section class="lesson-controls ${focus==='controls'||focus==='payout'?'lesson-focus':''}" data-focus="controls">${controls()}</section><div class="lesson-claims">${claimMarkup(l.notice,1,{settled:l.step>=21,compact:true})}</div></div><section class="lesson-coach" aria-label="月兔小姐的教学提示"><div class="lesson-portrait"><img src="${CINEMA_ASSETS.portraits[3]}" alt="月兔小姐"><span>你的领桌人</span></div><div class="lesson-dialogue"><div class="lesson-speaker">月兔小姐 <small>GUIDE</small></div><h2>${s[2]}</h2><p aria-live="polite">${s[3]}</p><div class="lesson-reply">${s[4]?actionButton(s[0],s[4]):'<span class="lesson-instruction">◇ 点击上方发光的操作继续</span>'}${l.step===23?'<button class="quiet" data-lesson="replay">重新练习</button>':''}</div><span class="lesson-help" role="status"></span></div></section>`;
   root.dataset.step=String(l.step);
   const scroll=root.querySelector('.lesson-scroll'),target=root.querySelector(`[data-focus="${focus||'players'}"]`);
   requestAnimationFrame(()=>{if(!root||!target)return;if(target.offsetTop+target.offsetHeight>scroll.scrollTop+scroll.clientHeight||target.offsetTop<scroll.scrollTop)scroll.scrollTop=Math.max(0,target.offsetTop-scroll.offsetTop-(scroll.clientHeight-target.offsetHeight)/2);});
  }
- function close(){save();root.remove();root=null;document.body.classList.remove('learning');onExit(lesson.step===23);}
+ function close(){feedback.clear();save();root.remove();root=null;document.body.classList.remove('learning');onExit(lesson.step===23);}
  function click(e){const b=e.target.closest('[data-lesson]');if(!b||playing||cinema.active)return;const a=b.dataset.lesson;
   if(a==='exit'||a==='finish'){close();return;}
-  if(a==='replay'){lesson=createLesson();save();render();return;}
-  if(!advanceLesson(lesson,a))return;save();
+  if(a==='replay'){feedback.clear();lesson=createLesson();save();render();return;}
+  const previousNotice=lesson.notice;if(!advanceLesson(lesson,a))return;save();const showImpact=()=>{if(root&&lesson.notice!==previousNotice)feedback.play(lesson.notice,{root,settled:lesson.step>=21});};
   if(a==='roll'||a==='fire'){
    playing=true;const event=a==='roll'?{actor:1,values:[...lesson.g.roll]}:{actor:1,target:2,face:6,zone:'table',value:6,before:3,after:2,human:true,label:'狙掉老板在6号赌场的一颗骰子'};
-   cinema.play(a==='roll'?'roll':'skill',event,()=>{playing=false;if(root){render();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}});
-  }else{render();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}
+   cinema.play(a==='roll'?'roll':'skill',event,()=>{playing=false;if(root){render();showImpact();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}});
+  }else{render();showImpact();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}
  }
  return {get active(){return !!root;},open(){if(root)return;lesson=createLesson(readProgress());root=document.createElement('section');root.className='lesson-root';root.setAttribute('aria-label','新手引导关');document.body.append(root);document.body.classList.add('learning');root.addEventListener('click',click);root.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(!playing)close();}});render();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}};
 }

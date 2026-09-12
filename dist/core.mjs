@@ -71,7 +71,8 @@ export function placeDice(g,face,rng=Math.random){
   if(MINIGAMES.includes(t.effect)&&!t.played[actor]){t.played[actor]=true;g.roll=[];g.phase='minigame';g.pending={face,actor,kind:t.effect,total:t.effect==='blackjack'?12:1+Math.floor(rng()*6),draws:[],wins:0,stage:'choice',earned:0,message:''};return true;}
   advance(g);return true;
 }
-function feedback(g,t,actor,before){const after=outcome(t),value=(o,i)=>sum(o.awards.filter(a=>a.player===i).map(a=>a.amount));g.lastEvent={face:t.face,actor,kind:after.ties.some(i=>!before.ties.includes(i))?'tie':'place',changes:g.players.map((_,i)=>({player:i,delta:value(after,i)-value(before,i)})).filter(x=>x.delta!==0),ties:after.ties};}
+export function banknoteOwners(t,result=outcome(t)){const awards=[...result.awards];return t.notes.map(amount=>{const index=awards.findIndex(a=>a.amount===amount);return index<0?null:awards.splice(index,1)[0].player;});}
+export function claimChange(t,actor,before){const after=outcome(t),value=(o,i)=>sum(o.awards.filter(a=>a.player===i).map(a=>a.amount)),from=banknoteOwners(t,before),to=banknoteOwners(t,after);return {face:t.face,actor,kind:after.ties.some(i=>!before.ties.includes(i))?'tie':'place',changes:NAMES.map((_,i)=>({player:i,delta:value(after,i)-value(before,i)})).filter(x=>x.delta!==0),ties:after.ties,beforeTies:before.ties,notes:t.notes.map((amount,index)=>({index,amount,from:from[index],to:to[index]})).filter(n=>n.from!==n.to)};}
 export function miniAction(g,action,rng=Math.random){
   const p=g.pending;if(g.phase!=='minigame'||!p)return false;
   if(action==='continue'){if(p.stage!=='done')return false;g.pending=null;advance(g);return true;}
@@ -172,3 +173,5 @@ export function validSave(g){
   if(['settled','finished'].includes(g.phase)&&(!g.players.every(p=>p.left===0)||g.settlements.length!==6||g.settlements.some((o,i)=>JSON.stringify(o)!==JSON.stringify(outcome(g.tables[i])))))return false;
   if((g.phase==='finished'&&g.round!==4)||(g.phase==='settled'&&g.round===4))return false;return true;
 }
+
+function feedback(g,t,actor,before){g.lastEvent=claimChange(t,actor,before);}

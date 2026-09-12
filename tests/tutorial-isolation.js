@@ -20,6 +20,10 @@ async(page)=>{
    if(i===10||i===23)await p.screenshot({path:`output/playwright/tutorial-offline-${i}.png`});
    await p.locator('.lesson-root .lesson-hot').first().click();if(await p.locator('#cinema[open]').count())await p.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());
   }
+  await p.locator('.exam-root [data-exam-face="6"]').first().click();await p.locator('.exam-root [data-exam="invest"]').click();await p.locator('.exam-root [data-exam="roll"]').click();
+  if(await p.locator('#cinema[open]').count())await p.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());
+  await p.locator('.exam-root [data-exam-face="6"]').first().click();await p.locator('.exam-root [data-exam="invest"]').click();
+  await p.waitForFunction(()=>document.querySelector('.exam-root')?.dataset.result==='won');await p.locator('.exam-root [data-exam="finish"]').first().click();
   await p.waitForFunction(()=>[...document.querySelectorAll('#modal img')].every(img=>img.complete&&img.naturalWidth));
   if(errors.length)throw Error(errors.join(';'));
   return {existingSaveUnchanged:true,visibilitySafe:true,offlineFullTutorial:true,assetsLoaded:true};

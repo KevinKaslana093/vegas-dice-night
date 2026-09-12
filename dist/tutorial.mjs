@@ -27,7 +27,7 @@ export const LESSON_STEPS=[
  ['collect','小游戏','五颗实体骰子，加一点桌内加成。','2号桌会按6的数量参与排名和撞数，但你并没有多出一颗实体骰子。点击完成，就可以结算这一轮了。',null,'controls'],
  ['next','派彩','这次是真正入袋了。','所有人的手中骰子都用完，才逐桌发钱。6号的大钞属于你，小钞属于老板；2号只有你一位获奖者，所以只拿一张，另一张回收。','牛仔：这笔账，记住了。','payout'],
  ['next','下一桌','认识一下正式牌局的另外三种技能。','丹宁小姐每轮9骰；老板能用全部筹码强制换一桌骰子；我嘛，能从别人手里的钱随机抽一张。主动技能每轮一次，我在结算后也能出手。','牛仔：看来还得提防你。','players'],
- ['finish','毕业','欢迎入局，牛仔。','正式牌局打四轮，总钱数最多的人赢；同额再比钞票张数。会下注只是开始，真正的乐趣是盯着别人，改变奖金的归属。准备好了就去选角色开局吧。','完成教学 · 去选角色']
+ ['finish','毕业挑战','最后一桌，你自己来赢。','基础规则已经学完。接下来给你两颗骰子和一次狙击，试着拿到皇家金库的大钞。没有指定操作顺序，赢下来才算毕业。正式牌局打四轮，总钱数最多者获胜。','接受毕业挑战 →']
 ];
 const lessonRoll=(g,values)=>{let i=0;return rollDice(g,()=>((values[i++%values.length]||1)-.5)/6);};
 const lessonBot=(g,face,values)=>{lessonRoll(g,values);placeDice(g,face);};
@@ -78,9 +78,9 @@ export function createTutorial({cinema,die,prefs=()=>({motion:true,fast:false}),
   const scroll=root.querySelector('.lesson-scroll'),target=root.querySelector(`[data-focus="${focus||'players'}"]`);
   requestAnimationFrame(()=>{if(!root||!target)return;if(target.offsetTop+target.offsetHeight>scroll.scrollTop+scroll.clientHeight||target.offsetTop<scroll.scrollTop)scroll.scrollTop=Math.max(0,target.offsetTop-scroll.offsetTop-(scroll.clientHeight-target.offsetHeight)/2);});
  }
- function close(){feedback.clear();save();root.remove();root=null;document.body.classList.remove('learning');onExit(lesson.step===23);}
+ function close(mode){feedback.clear();save();root.remove();root=null;document.body.classList.remove('learning');onExit(mode);}
  function click(e){const b=e.target.closest('[data-lesson]');if(!b||playing||cinema.active)return;const a=b.dataset.lesson;
-  if(a==='exit'||a==='finish'){close();return;}
+  if(a==='exit'){close();return;}if(a==='finish'){close('exam');return;}
   if(a==='replay'){feedback.clear();lesson=createLesson();save();render();return;}
   const previousNotice=lesson.notice;if(!advanceLesson(lesson,a))return;save();const showImpact=()=>{if(root&&lesson.notice!==previousNotice)feedback.play(lesson.notice,{root,settled:lesson.step>=21});};
   if(a==='roll'||a==='fire'){

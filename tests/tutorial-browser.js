@@ -21,6 +21,8 @@ async(page)=>{
    if(await page.locator('#cinema[open]').count())await page.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());
   }
   await page.locator('[data-lesson="finish"]').click();
+  await page.locator('.exam-root').waitFor();
+  await page.locator('.exam-root [data-exam="exit"]').click();
   if(await page.locator('#modal [data-pick="1"]').getAttribute('aria-pressed')!=='true')throw Error('Cowboy not selected on graduation');
   if(await page.evaluate(()=>localStorage.getItem('vegas-night-save-v5'))!==normal)throw Error('Normal save overwritten');
  }

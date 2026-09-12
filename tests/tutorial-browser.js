@@ -1,7 +1,8 @@
-async(page)=>{
+async(parent)=>{
+ const ctx=await parent.context().browser().newContext(),page=await ctx.newPage();try{await page.goto('http://127.0.0.1:4317');
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.evaluate(()=>sessionStorage.removeItem('tutorial-qa'));
- await page.addInitScript(()=>{if(!sessionStorage.getItem('tutorial-qa')){localStorage.removeItem('vegas-night-tutorial-v1');localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({fast:true,motion:false,sound:false}));sessionStorage.setItem('tutorial-qa','1');}});
+ await page.addInitScript(()=>{if(!sessionStorage.getItem('tutorial-qa')){localStorage.removeItem('vegas-night-tutorial-v2');localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({fast:true,motion:false,sound:false}));sessionStorage.setItem('tutorial-qa','1');}});
  await page.reload();
  const normal=await page.evaluate(()=>localStorage.getItem('vegas-night-save-v5'));
  for(const size of [{width:1440,height:1050},{width:390,height:844},{width:360,height:740}]){
@@ -28,4 +29,4 @@ async(page)=>{
  }
  if(errors.length)throw Error(errors.join('\n'));
  console.log('Tutorial passed: 24 steps × desktop/390px/360px; exit, reload, resume, replay, graduation, normal save isolation, no covered actions or browser errors.');
-}
+}finally{await ctx.close();}}

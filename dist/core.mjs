@@ -2,7 +2,7 @@
 export const SKILLS=[
  {name:'初来乍到',text:'被动：每轮额外获得1颗骰子，共9颗。'},
  {name:'正义执行',text:'每轮一次，狙掉任意玩家手中、刚掷出或已放入赌场的一颗实体骰子。该骰子本轮失效，下轮恢复。'},
- {name:'主场优势',text:'每轮一次，交出自己全部筹码，强制与一名玩家交换某座赌场的实体骰子数。至少需要1枚筹码，桌内加成不交换。'},
+ {name:'主场优势',text:'每轮一次，交出自己全部筹码，强制与一名玩家交换某座赌场的整组实体骰子（大骰一起交换）。至少需要1枚筹码，桌内加成不交换。'},
  {name:'魅力四射',text:'每轮一次，随时从另一位玩家已获得的钞票中随机抽走一张。结算后也可发动。'}
 ];
 
@@ -29,23 +29,27 @@ export function deck(rng=Math.random){const a=[6,8,8,6,6,5,5,5,5].flatMap((n,i)=
 export function createGame(humans=1,rng=Math.random,options={}){
   const rules=['half','all','classic'].includes(options.rules)?options.rules:'half';
   const hero=Number.isInteger(options.hero)&&options.hero>=0&&options.hero<4?options.hero:0;
-  const g={v:5,skills:options.skills===true,hero,round:0,humans,rules,move:0,pending:null,lastEvent:null,players:NAMES.map(name=>({name,cash:0,notes:0,wallet:[],chips:0,used:false,left:8,supply:8,lost:0,skips:0})),deck:deck(rng),tables:[],turn:0,roll:[],phase:'ready',history:[],settlements:[]};nextRound(g,rng);return g;
+  const g={v:5,bigDice:options.bigDice===true,finalActions:options.finalActions===true,reaction:null,turningPoint:null,skills:options.skills===true,hero,round:0,humans,rules,move:0,pending:null,lastEvent:null,players:NAMES.map(name=>({name,cash:0,notes:0,wallet:[],chips:0,used:false,left:8,supply:8,lost:0,skips:0})),deck:deck(rng),tables:[],turn:0,roll:[],phase:'ready',history:[],settlements:[]};nextRound(g,rng);return g;
 }
 function log(g,s){g.history.unshift(s);g.history=g.history.slice(0,48);}
 export function nextRound(g,rng=Math.random){
-  if(g.round>=4)throw Error('Game finished');g.round++;g.turn=(g.hero+g.round-1)%4;g.roll=[];g.phase='ready';g.settlements=[];g.move=0;g.pending=null;g.lastEvent=null;
-  g.players.forEach((p,i)=>{p.left=g.skills&&i===0?9:8;p.supply=p.left;p.lost=0;p.skips=0;p.used=false;p.chips+=2;});
+  if(g.round>=4)throw Error('Game finished');g.round++;g.turn=(g.hero+g.round-1)%4;g.roll=[];g.phase='ready';g.settlements=[];g.move=0;g.pending=null;g.lastEvent=null;g.reaction=null;g.turningPoint=null;
+  g.players.forEach((p,i)=>{p.left=g.skills&&i===0?9:8;p.supply=p.left;p.lost=0;p.skips=0;p.used=false;p.chips+=2;if(g.bigDice){p.bigLeft=1;p.bigLost=0;}});
   const purses=Array.from({length:6},()=>{if(g.deck.length<2)throw Error('Empty deck');return g.deck.splice(0,2).sort((a,b)=>b-a);}).sort((a,b)=>sum(a)-sum(b)||a[0]-b[0]);
   const effects=[...SPECIALS];
   for(let i=effects.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[effects[i],effects[j]]=[effects[j],effects[i]];}
   if(!effects.slice(0,3).some(e=>MINIGAMES.includes(e))){const j=effects.findIndex(e=>MINIGAMES.includes(e)),k=Math.floor(rng()*3);[effects[j],effects[k]]=[effects[k],effects[j]];}
-  g.tables=CASINOS.map((name,i)=>({name,face:i+1,notes:purses[i],effect:g.rules==='all'||(g.rules==='half'&&i<3)?effects[i]:'classic',counts:[0,0,0,0],bonus:[0,0,0,0],played:[false,false,false,false],first:[0,0,0,0],last:[0,0,0,0]}));
+  g.tables=CASINOS.map((name,i)=>({name,face:i+1,notes:purses[i],effect:g.rules==='all'||(g.rules==='half'&&i<3)?effects[i]:'classic',counts:[0,0,0,0],big:[0,0,0,0],bonus:[0,0,0,0],played:[false,false,false,false],first:[0,0,0,0],last:[0,0,0,0]}));
   log(g,`第 ${g.round} 轮 · 每桌2张钞票${g.rules==='classic'?'':' · 特殊效果已重新抽取'} · ${g.players[g.turn].name}先手`);
 }
 export function rollDice(g,rng=Math.random){if(g.phase!=='ready')return false;g.roll=Array.from({length:g.players[g.turn].left},()=>1+Math.floor(rng()*6));g.phase='choose';return true;}
+export const bigCount=(t,i)=>t.big?.[i]||0;
+export const tableWeight=(t,i)=>t.counts[i]+bigCount(t,i)+(t.bonus?.[i]||0);
+export const isBigRoll=(g,index)=>!!g.bigDice&&g.players[g.turn].bigLeft===1&&index===0;
+export const placedBig=(g,face)=>g.bigDice&&g.players[g.turn].bigLeft&&g.roll[0]===face?1:0;
 export function outcome(t){
   const effect=t.effect||'classic',first=t.first||[0,0,0,0],last=t.last||[0,0,0,0];
-  const eligible=t.counts.map((n,i)=>({n:n+(t.bonus?.[i]||0),i})).filter(x=>t.counts[x.i]>0&&(effect!=='gate'||x.n>=3));
+  const eligible=t.counts.map((n,i)=>({n:tableWeight(t,i),i})).filter(x=>t.counts[x.i]>0&&(effect!=='gate'||x.n>=3));
   const ties=effect==='insurance'?[]:eligible.filter(x=>eligible.filter(y=>y.n===x.n).length>1).map(x=>x.i);
   const rank=eligible.filter(x=>!ties.includes(x.i)).sort((a,b)=>{
     if(effect==='low')return a.n-b.n;
@@ -59,15 +63,15 @@ export function outcome(t){
 }
 export function previewTable(g,face){
   const t=g.tables[face-1],counts=[...t.counts],first=[...t.first],last=[...t.last],n=g.roll.filter(x=>x===face).length;
-  counts[g.turn]+=n;if(n){first[g.turn] ||= g.move+1;last[g.turn]=g.move+1;}return {...t,counts,first,last};
+  const big=[...(t.big||[0,0,0,0])];big[g.turn]+=placedBig(g,face);counts[g.turn]+=n;if(n){first[g.turn] ||= g.move+1;last[g.turn]=g.move+1;}return {...t,counts,big,first,last};
 }
-function advance(g){g.roll=[];if(g.players.every(p=>p.left===0)){settle(g);return;}do{g.turn=(g.turn+1)%4;}while(g.players[g.turn].left===0);g.phase='ready';}
+function advance(g){g.roll=[];if(g.players.every(p=>p.left===0)){beginReaction(g);return;}do{g.turn=(g.turn+1)%4;}while(g.players[g.turn].left===0);g.phase='ready';}
 export function placeDice(g,face,rng=Math.random){
   if(g.phase!=='choose'||!g.roll.includes(face))return false;
   const count=g.roll.filter(x=>x===face).length,actor=g.turn,t=g.tables[face-1];
-  const before=outcome(t);g.move++;t.counts[actor]+=count;t.first[actor] ||= g.move;t.last[actor]=g.move;g.players[actor].left-=count;
-  feedback(g,t,actor,before);
-  const o=outcome(t);log(g,`${g.players[actor].name} → ${face}号：${count}颗${o.ties.includes(actor)?' · 撞数出局':''}`);
+  const before=outcome(t),snapshot=t.counts.map((_,i)=>tableWeight(t,i)),large=placedBig(g,face);g.move++;t.counts[actor]+=count;if(large){t.big[actor]++;g.players[actor].bigLeft=0;}t.first[actor] ||= g.move;t.last[actor]=g.move;g.players[actor].left-=count;
+  feedback(g,t,actor,before,'下注',snapshot);
+  const o=outcome(t);log(g,`${g.players[actor].name} → ${face}号：${count}颗${large?'（含大骰，计数+'+(count+large)+'）':''}${o.ties.includes(actor)?' · 撞数出局':''}`);
   if(MINIGAMES.includes(t.effect)&&!t.played[actor]){t.played[actor]=true;g.roll=[];g.phase='minigame';g.pending={face,actor,kind:t.effect,total:t.effect==='blackjack'?12:1+Math.floor(rng()*6),draws:[],wins:0,stage:'choice',earned:0,message:''};return true;}
   advance(g);return true;
 }
@@ -93,60 +97,63 @@ export function miniAction(g,action,rng=Math.random){
   }
   return false;
 }
-function finishMini(g,earned,message){const p=g.pending,t=g.tables[p.face-1],before=outcome(t);p.earned=earned;p.stage='done';p.message=message;t.bonus[p.actor]=earned;feedback(g,t,p.actor,before);log(g,`${g.players[p.actor].name} · ${EFFECTS[p.kind].name}：${message} · 本桌加成+${earned}`);}
+function finishMini(g,earned,message){const p=g.pending,t=g.tables[p.face-1],before=outcome(t),snapshot=t.counts.map((_,i)=>tableWeight(t,i));p.earned=earned;p.stage='done';p.message=message;t.bonus[p.actor]=earned;feedback(g,t,p.actor,before,'小游戏加成',snapshot);log(g,`${g.players[p.actor].name} · ${EFFECTS[p.kind].name}：${message} · 本桌加成+${earned}`);}
 export function miniBotAction(g){const p=g.pending;if(!p)return null;if(p.stage==='done')return 'continue';if(p.kind==='blackjack')return p.total>=18?'bank':'draw';if(p.wins&&p.total>=3&&p.total<=4)return 'bank';return p.total<=3?'higher':'lower';}
 export function canSkip(g){return g.phase==='choose'&&g.players[g.turn].left>0&&g.players[g.turn].chips>0;}
 export function skipTurn(g){if(!canSkip(g))return false;const p=g.players[g.turn];p.skips++;p.chips--;g.lastEvent=null;log(g,`${p.name}支付1枚筹码跳过 · 留着${p.left}颗骰子，下次轮到时重投`);advance(g);return true;}
-export function settle(g){if(['settled','finished'].includes(g.phase))return;g.settlements=g.tables.map(t=>{const o=outcome(t);o.awards.forEach(a=>{g.players[a.player].wallet.push(a.amount);syncMoney(g.players[a.player]);});g.deck.push(...o.unused);return o;});g.phase=g.round===4?'finished':'settled';}
+export function settle(g){if(['settled','finished','reaction'].includes(g.phase))return;g.reaction=null;g.settlements=g.tables.map(t=>{const o=outcome(t);o.awards.forEach(a=>{g.players[a.player].wallet.push(a.amount);syncMoney(g.players[a.player]);});g.deck.push(...o.unused);return o;});g.phase=g.round===4?'finished':'settled';}
 function syncMoney(p){p.cash=sum(p.wallet);p.notes=p.wallet.length;}
-export function canSkill(g,actor){return g.skills&&Number.isInteger(actor)&&actor>0&&actor<4&&!g.players[actor].used&&(actor===3||!['settled','finished'].includes(g.phase))&&(actor!==2||g.players[actor].chips>0);}
+export function canSkill(g,actor){return (g.phase!=='reaction'||g.turn===actor)&&g.skills&&Number.isInteger(actor)&&actor>0&&actor<4&&!g.players[actor].used&&(actor===3||!['settled','finished'].includes(g.phase))&&(actor!==2||g.players[actor].chips>0);}
 export function useSkill(g,actor,choice,rng=Math.random){
-  if(!canSkill(g,actor)||!choice)return false;const {target,zone,face,index}=choice;
+  if(!canSkill(g,actor)||!choice)return false;const {target,zone,face,index,big=false}=choice;
   if(!Number.isInteger(target)||target<0||target>3)return false;
   const p=g.players[actor],other=g.players[target];let detail='';
   if(actor===1){
     if(zone==='table'){
       if(!Number.isInteger(face)||face<1||face>6)return false;const t=g.tables[face-1];if(!t.counts[target])return false;
-      const before=outcome(t);t.counts[target]--;other.lost++;feedback(g,t,actor,before);detail=`狙掉${other.name}在${face}号桌的一颗骰子`;
+      const large=big===true;if(large?!bigCount(t,target):t.counts[target]<=bigCount(t,target))return false;const before=outcome(t),snapshot=t.counts.map((_,i)=>tableWeight(t,i));t.counts[target]--;other.lost++;if(large){t.big[target]--;other.bigLost++;}feedback(g,t,actor,before,large?'狙击大骰':'狙击',snapshot);detail=`狙掉${other.name}在${face}号桌的一颗${large?'大骰（计数−2）':'普通骰'}`;
     }else if(zone==='roll'){
       if(g.phase!=='choose'||target!==g.turn||!Number.isInteger(index)||index<0||index>=g.roll.length)return false;
-      const value=g.roll.splice(index,1)[0];other.left--;other.lost++;g.lastEvent=null;detail=`狙掉${other.name}刚掷出的${value}点骰子`;
+      const large=isBigRoll(g,index);const value=g.roll.splice(index,1)[0];if(large){other.bigLeft=0;other.bigLost++;}other.left--;other.lost++;g.lastEvent=null;detail=`狙掉${other.name}刚掷出的${value}点${large?'大骰':'普通骰'}`;
     }else if(zone==='hand'){
       if(other.left<1||(g.phase==='choose'&&target===g.turn))return false;
-      other.left--;other.lost++;g.lastEvent=null;detail=`狙掉${other.name}手中的一颗骰子`;
+      if(big?!other.bigLeft:other.left<=(other.bigLeft||0))return false;other.left--;other.lost++;if(big){other.bigLeft=0;other.bigLost++;}g.lastEvent=null;detail=`狙掉${other.name}手中的一颗${big?'大骰':'普通骰'}`;
     }else return false;
   }else if(actor===2){
     if(target===actor||!Number.isInteger(face)||face<1||face>6)return false;
-    const t=g.tables[face-1],a=t.counts[actor],b=t.counts[target];if(a===b)return false;
-    const before=outcome(t);t.counts[actor]=b;t.counts[target]=a;p.supply+=b-a;other.supply+=a-b;g.move++;
+    const t=g.tables[face-1],a=t.counts[actor],b=t.counts[target];if(a===b&&bigCount(t,actor)===bigCount(t,target))return false;
+    const before=outcome(t),snapshot=t.counts.map((_,i)=>tableWeight(t,i));if(t.big)[t.big[actor],t.big[target]]=[t.big[target],t.big[actor]];t.counts[actor]=b;t.counts[target]=a;p.supply+=b-a;other.supply+=a-b;g.move++;
     for(const i of [actor,target]){t.first[i]=t.counts[i]?(t.first[i]||g.move):0;t.last[i]=t.counts[i]?g.move:0;}
-    const cost=p.chips;other.chips+=cost;p.chips=0;feedback(g,t,actor,before);detail=`交给${other.name}${cost}枚筹码，交换${face}号桌骰子（${a} ↔ ${b}）`;
+    const cost=p.chips;other.chips+=cost;p.chips=0;feedback(g,t,actor,before,'强制交易',snapshot);detail=`交给${other.name}${cost}枚筹码，交换${face}号桌骰子（${a} ↔ ${b}）`;
   }else{
     if(target===actor||other.wallet.length===0)return false;
     const i=Math.floor(rng()*other.wallet.length),amount=other.wallet.splice(i,1)[0];p.wallet.push(amount);syncMoney(p);syncMoney(other);g.lastEvent=null;detail=`从${other.name}的钱中抽走${amount/10000}万`;
   }
   p.used=true;log(g,`${p.name}发动${['','正义执行','主场优势','魅力四射'][actor]} · ${detail}`);
-  if(['ready','choose'].includes(g.phase)&&g.players[g.turn].left===0)advance(g);
+  if(g.phase==='reaction')passReaction(g,actor);else if(['ready','choose'].includes(g.phase)&&g.players[g.turn].left===0)advance(g);
   return true;
 }
 export function botSkill(g,actor,rng=Math.random){
-  if(!canSkill(g,actor))return null;
-  if(actor===3){const targets=g.players.map((p,i)=>({i,p})).filter(x=>x.i!==3&&x.p.wallet.length).sort((a,b)=>b.p.cash/b.p.notes-a.p.cash/a.p.notes);return targets.length?{target:targets[0].i}:null;}
-  const own=t=>sum(outcome(t).awards.filter(a=>a.player===actor).map(a=>a.amount)),rivals=t=>sum(outcome(t).awards.filter(a=>a.player!==actor).map(a=>a.amount));
-  const choices=[];
-  for(const t of g.tables)for(let target=0;target<4;target++){
-    const copy={...t,counts:[...t.counts]};if(actor===1){if(!copy.counts[target])continue;copy.counts[target]--;}else{if(target===actor||copy.counts[target]===copy.counts[actor])continue;[copy.counts[actor],copy.counts[target]]=[copy.counts[target],copy.counts[actor]];}
-    const score=(own(copy)-own(t))+(rivals(t)-rivals(copy))*.3;
-    choices.push({target,face:t.face,zone:'table',score});
-  }
-  choices.sort((a,b)=>b.score-a.score);if(choices[0]?.score>0&&(g.move>=6||sum(g.players.map(p=>p.left))<=5))return choices[0];
-  if(actor===1&&g.move>=12){const target=g.turn;if(target!==actor&&g.players[target].left>0)return g.phase==='choose'?{target,zone:'roll',index:0}:{target,zone:'hand'};}
-  return null;
+ if(!canSkill(g,actor))return null;
+ if(actor===3){const targets=g.players.map((p,i)=>({i,p})).filter(x=>x.i!==3&&x.p.wallet.length).sort((a,b)=>b.p.cash/b.p.notes-a.p.cash/a.p.notes);return targets.length?{target:targets[0].i}:null;}
+ const own=t=>sum(outcome(t).awards.filter(a=>a.player===actor).map(a=>a.amount)),rivals=t=>sum(outcome(t).awards.filter(a=>a.player!==actor).map(a=>a.amount)),choices=[];
+ for(const t of g.tables)for(let target=0;target<4;target++)for(const big of actor===1?[false,true]:[false]){
+  const copy={...t,counts:[...t.counts],big:[...(t.big||[0,0,0,0])]};
+  if(actor===1){if(big?!bigCount(t,target):t.counts[target]<=bigCount(t,target))continue;copy.counts[target]--;if(big)copy.big[target]--;}
+  else{if(target===actor||(copy.counts[target]===copy.counts[actor]&&copy.big[target]===copy.big[actor]))continue;[copy.counts[actor],copy.counts[target]]=[copy.counts[target],copy.counts[actor]];[copy.big[actor],copy.big[target]]=[copy.big[target],copy.big[actor]];}
+  const score=(own(copy)-own(t))+(rivals(t)-rivals(copy))*.3-(actor===2?g.players[actor].chips*1200:0);
+  choices.push({target,face:t.face,zone:'table',big,score});
+ }
+ choices.sort((a,b)=>b.score-a.score);
+ const remaining=sum(g.players.map(p=>p.left)),threshold=actor===1&&remaining>8?50000:0;
+ if(choices[0]?.score>threshold&&(g.phase==='reaction'||g.move>=6||remaining<=5))return choices[0];
+ if(actor===1&&g.move>=12&&remaining<=5){const target=g.turn;if(target!==actor&&g.players[target].left>0)return g.phase==='choose'?{target,zone:'roll',index:0}:{target,zone:'hand',big:!!g.players[target].bigLeft};}
+ return null;
 }
 export function winners(g){const rank=g.players.map((p,i)=>({...p,i})).sort((a,b)=>b.cash-a.cash||b.notes-a.notes);return rank.filter(p=>p.cash===rank[0].cash&&p.notes===rank[0].notes).map(p=>p.i);}
 export function botChoice(g,rng=Math.random){
   const me=g.turn,own=o=>sum(o.awards.filter(a=>a.player===me).map(a=>a.amount)),rivals=o=>sum(o.awards.filter(a=>a.player!==me).map(a=>a.amount));
-  const choices=[...new Set(g.roll)].map(face=>{const n=g.roll.filter(x=>x===face).length,before=outcome(g.tables[face-1]),after=outcome(previewTable(g,face));return {face,score:(own(after)-own(before))/10000+(rivals(before)-rivals(after))/50000-n*.15+rng()*.8};}).sort((a,b)=>b.score-a.score);
+  const choices=[...new Set(g.roll)].map(face=>{const n=g.roll.filter(x=>x===face).length,before=outcome(g.tables[face-1]),after=outcome(previewTable(g,face));const t=g.tables[face-1],spread=g.players[me].left>3&&!t.counts[me],trade=me===2&&canSkill(g,2)&&g.players[me].left>3&&t.counts[me]===0;const style=me===0?(spread?.75:0):me===1?(after.ties.includes(me)?-.4:0):me===2?(trade?.45:0):-.1*n;return {face,score:(own(after)-own(before))/10000+(rivals(before)-rivals(after))/50000-n*.15+style+rng()*.8};}).sort((a,b)=>b.score-a.score);
   return choices[0]?.face;
 }
 export function botShouldSkip(g,rng=Math.random){
@@ -155,12 +162,15 @@ export function botShouldSkip(g,rng=Math.random){
   const own=o=>sum(o.awards.filter(a=>a.player===g.turn).map(a=>a.amount));return own(after)<=own(before)&&rng()<.45;
 }
 export function validSave(g){
-  if(!g||g.v!==5||typeof g.skills!=='boolean'||!Number.isInteger(g.hero)||g.hero<0||g.hero>3||![1,2,3,4].includes(g.round)||![1,2,4].includes(g.humans)||!['half','all','classic'].includes(g.rules)||!['ready','choose','minigame','settled','finished'].includes(g.phase))return false;
+  if(!g||g.v!==5||typeof g.skills!=='boolean'||!Number.isInteger(g.hero)||g.hero<0||g.hero>3||![1,2,3,4].includes(g.round)||![1,2,4].includes(g.humans)||!['half','all','classic'].includes(g.rules)||!['ready','choose','minigame','reaction','settled','finished'].includes(g.phase))return false;
+  if(g.bigDice!==undefined&&typeof g.bigDice!=='boolean'||g.finalActions!==undefined&&typeof g.finalActions!=='boolean')return false;
   const int=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max,note=n=>int(n,90000)&&n>=10000&&n%10000===0;
   if(!int(g.turn,3)||!int(g.move,100)||!Array.isArray(g.players)||g.players.length!==4||!Array.isArray(g.tables)||g.tables.length!==6)return false;
   if(!g.players.every(p=>typeof p.name==='string'&&p.name.length<30&&int(p.left,9)&&int(p.chips,32)&&typeof p.used==='boolean'&&int(p.supply,33)&&int(p.lost,1)&&Array.isArray(p.wallet)&&p.wallet.every(note)&&p.cash===sum(p.wallet)&&p.notes===p.wallet.length&&int(p.cash,3000000)&&int(p.notes,54)&&int(p.skips,Number.MAX_SAFE_INTEGER)))return false;
   if(!Array.isArray(g.deck)||!g.deck.every(note)||!Array.isArray(g.roll)||!g.roll.every(n=>int(n,6)&&n>0))return false;
   if(!g.tables.every((t,i)=>t.face===i+1&&t.name===CASINOS[i]&&Object.hasOwn(EFFECTS,t.effect)&&Array.isArray(t.notes)&&t.notes.length===2&&t.notes.every(note)&&['counts','first','last'].every(key=>Array.isArray(t[key])&&t[key].length===4&&t[key].every(n=>int(n,key==='counts'?33:100)))))return false;
+  if(g.bigDice){if(!g.players.every(p=>int(p.bigLeft,1)&&p.bigLeft<=p.left&&int(p.bigLost,1)&&p.bigLost<=p.lost)||!g.tables.every(t=>Array.isArray(t.big)&&t.big.length===4&&t.big.every((n,i)=>int(n,4)&&n<=t.counts[i]))||sum(g.players.map(p=>p.bigLeft+p.bigLost))+sum(g.tables.flatMap(t=>t.big))!==4)return false;}else if(g.players.some(p=>p.bigLeft||p.bigLost)||g.tables.some(t=>t.big?.some(n=>n!==0)))return false;
+  if(g.phase==='reaction'){const r=g.reaction;if(!g.finalActions||!g.skills||!g.players.every(p=>p.left===0)||!r||!Array.isArray(r.order)||r.order.length>3||new Set(r.order).size!==r.order.length||!r.order.every(i=>Number.isInteger(i)&&i>0&&i<4)||!int(r.index,r.order.length-1)||r.order[r.index]!==g.turn||!hasSkillTarget(g,g.turn)||!Array.isArray(g.settlements)||g.settlements.length)return false;}else if(g.reaction!=null)return false;
   if(!g.players.every((p,i)=>sum(g.tables.map(t=>t.counts[i]))+p.left+p.lost===p.supply))return false;
   if(sum(g.players.map(p=>p.supply))!==(g.skills?33:32))return false;
   if(!g.tables.every(t=>Array.isArray(t.bonus)&&t.bonus.length===4&&t.bonus.every(n=>int(n,2))&&Array.isArray(t.played)&&t.played.length===4&&t.played.every(v=>typeof v==='boolean')))return false;
@@ -174,4 +184,25 @@ export function validSave(g){
   if((g.phase==='finished'&&g.round!==4)||(g.phase==='settled'&&g.round===4))return false;return true;
 }
 
-function feedback(g,t,actor,before){g.lastEvent=claimChange(t,actor,before);}
+function feedback(g,t,actor,before,action='小游戏加成',beforeCounts=null){
+ g.lastEvent=claimChange(t,actor,before);
+ const e=g.lastEvent,score=sum(e.changes.map(x=>Math.abs(x.delta)))+e.notes.filter(n=>n.from!==null&&n.to!==n.from).length*60000+(action.includes('狙击')||action==='强制交易'?40000:0);
+ if(e.notes.length&&score>0&&(!g.turningPoint||score>g.turningPoint.score))g.turningPoint={...JSON.parse(JSON.stringify(e)),score,action,beforeCounts,afterCounts:t.counts.map((_,i)=>tableWeight(t,i)),effect:t.effect};
+}
+function hasSkillTarget(g,actor){
+ const p=g.players[actor];if(!g.skills||actor===0||p.used)return false;
+ if(actor===1)return g.tables.some(t=>t.counts.some(n=>n>0))||g.players.some(p=>p.left>0);
+ if(actor===2)return p.chips>0&&g.tables.some(t=>t.counts.some((n,i)=>i!==actor&&(n!==t.counts[actor]||bigCount(t,i)!==bigCount(t,actor))));
+ return g.players.some((p,i)=>i!==actor&&p.wallet.length);
+}
+function beginReaction(g){
+ if(!g.finalActions||!g.skills){settle(g);return;}
+ const order=Array.from({length:4},(_,i)=>(g.turn+i+1)%4).filter(i=>hasSkillTarget(g,i));
+ if(!order.length){settle(g);return;}g.reaction={order,index:0};g.turn=order[0];g.phase='reaction';log(g,'最后行动 · 奖金尚未发放，依次发动技能或放弃');
+}
+export function passReaction(g,actor=g.turn){
+ if(g.phase!=='reaction'||actor!==g.turn)return false;
+ const r=g.reaction;do{r.index++;}while(r.index<r.order.length&&!hasSkillTarget(g,r.order[r.index]));
+ if(r.index<r.order.length){g.turn=r.order[r.index];return true;}
+ g.reaction=null;g.phase='ready';settle(g);return true;
+}

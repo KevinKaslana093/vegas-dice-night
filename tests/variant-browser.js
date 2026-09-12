@@ -5,7 +5,7 @@ async (page) => {
  await page.getByRole('button',{name:'入座，开一局'}).click();
  await page.getByRole('button',{name:'明白了，回到牌桌'}).click();
  await page.getByRole('button',{name:'声音 · 开'}).click();
- await page.getByLabel('加快电脑出手').check();await page.getByLabel('掷骰动画').uncheck();
+ await page.getByLabel('加快电脑出手').check();await page.getByLabel('动态演出与掷骰动画').uncheck();
  await page.getByRole('button',{name:'回到牌桌',exact:true}).click();
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));
  if(!before.tables.every(t=>t.notes.length===2)||await page.locator('.banknotes span').count()!==12)throw Error('Each casino must show exactly two notes');
@@ -37,7 +37,7 @@ async (page) => {
  await page.getByRole('button',{name:'入座，开一局'}).click();await page.getByRole('button',{name:'明白了，回到牌桌'}).click();
  const chosen=await page.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));if(chosen.hero!==2||chosen.turn!==2||!await page.locator('.seat-2 .seat-top').innerText().then(s=>s.includes('你')))throw Error('Wrong controlled character');let steps=0;
  while(steps++<1200){
-  const g=await page.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));
+  if(await page.locator('#cinema[open]').count()){await page.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());continue;}const g=await page.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));
   if(g.phase==='finished'){await page.getByRole('button',{name:'再来一局',exact:true}).waitFor();break;}
   if(g.phase==='settled')await page.getByRole('button',{name:`进入第 ${g.round+1} 轮`,exact:true}).click();
   else if(g.turn===g.hero&&g.phase==='minigame'){const action=g.pending.stage==='done'?'continue':'bank';await page.locator('[data-mini='+action+']').click();}

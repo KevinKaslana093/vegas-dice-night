@@ -10,7 +10,7 @@ export const SKILLS=[
 ];
 
 export const NAMES=['丹宁小姐','筹码牛仔','赌场老板','月兔小姐','霜序小姐','夜幕先生','迟归先生'];
-export const COLORS=['#f5b7cb','#f2c477','#7bdcc4','#bda2fb','#84d6ef','#e696b7','#eab775'];
+export const COLORS=['#f17b77','#e9c477','#eee8da','#bdb6ac','#e9dfc9','#d89b90','#eab775'];
 export const CASINOS=['霓虹街','落日酒馆','月兔会馆','翡翠厅','星光宫','皇家金库'];
 export const EFFECTS={
   classic:{name:'经典赌场',short:'同数出局 · 多者先拿',text:'同数量全部出局；其余玩家按骰子从多到少，每人拿一张钞票。'},

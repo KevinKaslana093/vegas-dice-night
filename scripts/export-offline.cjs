@@ -4,7 +4,7 @@ const mime=file=>file.endsWith('.ogg')?'audio/ogg':file.endsWith('.webp')?'image
 const data=file=>'data:'+mime(file)+';base64,'+fs.readFileSync(path.join(root,'assets',file)).toString('base64');
 const blob=file=>'embeddedAsset('+JSON.stringify(mime(file))+','+JSON.stringify(fs.readFileSync(path.join(root,'assets',file)).toString('base64'))+')';
 const runtime='function embeddedAsset(mime,encoded){const raw=atob(encoded),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return URL.createObjectURL(new Blob([bytes],{type:mime}));}\n';
-const modules=['core','cinema','claims','decisions','exam','tutorial','encore','finale','basics','app'].map(name=>{
+const modules=['core','identity','cinema','claims','decisions','exam','tutorial','encore','finale','basics','app'].map(name=>{
  let s=fs.readFileSync(path.join(root,name+'.mjs'),'utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export /gm,'');
  if(name==='cinema')s=s.replace(/'\.\/assets\/([^']+)'/g,(_,file)=>blob(file));
  if(name==='app')s=s.replace(/const ART=\[([^\n]+?)\];/,(_,list)=>'const ART=['+[...list.matchAll(/'([^']+)'/g)].map(m=>blob(m[1])).join(',')+'];').replaceAll('src="./assets/${ART[i]}"','src="${ART[i]}"').replaceAll("ART.map(x=>'./assets/'+x)",'ART');

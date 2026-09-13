@@ -69,5 +69,5 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           if ! gh release view "v$version" >/dev/null 2>&1; then
-            gh release create "v$version" output/vegas-dice-night.html --target "$GITHUB_SHA" --title "V$version · 海报大厅与迟归先生" --notes-file RELEASE-V9.md
+            gh release create "v$version" output/vegas-dice-night.html --target "$GITHUB_SHA" --title "V$version · 红黑金白赌场与分层界面" --notes-file RELEASE-V10.md
           fi

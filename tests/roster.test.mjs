@@ -11,8 +11,8 @@ function play(g){let steps=0;while(g.phase!=='finished'){
  if(g.phase==='ready')rollDice(g);else if(g.phase==='minigame')miniAction(g,miniBotAction(g));else placeDice(g,botChoice(g));
  }assert(validSave(g));return g;
 }
-test('all six roles work in rotated seats; passive and big dice follow actual roles',()=>{
- for(let role=0;role<6;role++)for(let seat=0;seat<4;seat++){const cast=[0,1,2,3,4,5].filter(x=>x!==role).slice(0,3);cast.splice(seat,0,role);const g=create({cast,hero:seat});assert.equal(roleOf(g,seat),role);assert.equal(g.players[seat].left,role===0?9:8);assert.equal(g.players.reduce((n,p)=>n+p.left,0),initialSupply(g));assert(validSave(g));}
+test('all seven roles work in rotated seats; passive and big dice follow actual roles',()=>{
+ for(let role=0;role<7;role++)for(let seat=0;seat<4;seat++){const cast=[0,1,2,3,4,5,6].filter(x=>x!==role).slice(0,3);cast.splice(seat,0,role);const g=create({cast,hero:seat});assert.equal(roleOf(g,seat),role);assert.equal(g.players[seat].left,role===0?9:8);assert.equal(g.players.reduce((n,p)=>n+p.left,0),initialSupply(g));assert(validSave(g));}
 });
 test('dealer sets a big die without splitting it; invalid choices preserve the entire state',()=>{
  const g=create();rollDice(g);const old=g.roll[0],before=JSON.stringify(g);for(const c of [{target:0,index:0,value:old},{target:1,index:0,value:1},{target:0,index:99,value:6}]){assert.equal(useSkill(g,0,c),false);assert.equal(JSON.stringify(g),before);}

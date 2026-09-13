@@ -5,7 +5,7 @@ async(page)=>{
   await p.addInitScript(()=>localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({sound:false,motion:false,fast:true,cutins:false})));
   await p.goto(base);await p.locator('#modal.lobby').waitFor();await p.screenshot({path:'output/playwright/lobby-'+width+'.png'});
   await p.locator('.lobby-start').click();await p.locator('.hero-stage').waitFor();
-  for(let i=1;i<=6;i++){await p.locator('.hero-next').click();if(await p.locator('.hero-stage').getAttribute('data-hero-stage')!==String(i%6))throw Error('hero carousel');}
+  for(let i=1;i<=7;i++){await p.locator('.hero-next').click();if(await p.locator('.hero-stage').getAttribute('data-hero-stage')!==String((6+i)%7))throw Error('hero carousel');}
   await p.locator('[data-pick="4"]').click();await p.screenshot({path:'output/playwright/dealer-'+width+'.png'});
   await p.locator('summary').click();await p.locator('#mode').selectOption('4');await p.locator('#ruleset').selectOption('classic');await p.locator('[data-action="start"]').click();await p.locator('#modal [data-action="close"]').click();
   await p.waitForTimeout(400);await p.locator('#app [data-action="roll"]').click();await p.waitForTimeout(400);

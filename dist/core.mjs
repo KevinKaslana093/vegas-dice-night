@@ -5,11 +5,12 @@ export const SKILLS=[
  {name:'主场优势',text:'每轮一次，交出自己全部筹码，强制与一名玩家交换某座赌场的整组实体骰子（大骰一起交换）。至少需要1枚筹码，桌内加成不交换。'},
  {name:'魅力四射',text:'每轮一次，随时从另一位玩家已获得的钞票中随机抽走一张。结算后也可发动。'},
  {name:'精准发牌',text:'每轮一次，在自己掷骰后，将其中一颗骰子改为指定点数；大骰也可以选择。'},
- {name:'袖中乾坤',text:'每轮一次，在自己掷骰后，立即重掷其中一至两颗骰子，不消耗筹码、不跳过回合。'}
+ {name:'袖中乾坤',text:'每轮一次，在自己掷骰后，立即重掷其中一至两颗骰子，不消耗筹码、不跳过回合。'},
+ {name:'准点下班',text:'每轮一次，掷骰后将一种点数的整组骰子改成另一点数，再从本次所有骰子中随机失去一颗（含大骰），本轮不恢复。'}
 ];
 
-export const NAMES=['丹宁小姐','筹码牛仔','赌场老板','月兔小姐','霜序小姐','夜幕先生'];
-export const COLORS=['#f5b7cb','#f2c477','#7bdcc4','#bda2fb','#84d6ef','#e696b7'];
+export const NAMES=['丹宁小姐','筹码牛仔','赌场老板','月兔小姐','霜序小姐','夜幕先生','迟归先生'];
+export const COLORS=['#f5b7cb','#f2c477','#7bdcc4','#bda2fb','#84d6ef','#e696b7','#eab775'];
 export const CASINOS=['霓虹街','落日酒馆','月兔会馆','翡翠厅','星光宫','皇家金库'];
 export const EFFECTS={
   classic:{name:'经典赌场',short:'同数出局 · 多者先拿',text:'同数量全部出局；其余玩家按骰子从多到少，每人拿一张钞票。'},
@@ -39,7 +40,7 @@ export function rematch(g){if(!g.random)return null;return createGame(g.humans,M
 export function createGame(humans=1,rng=Math.random,options={}){
   const rules=['half','all','classic'].includes(options.rules)?options.rules:'half';
   const hero=Number.isInteger(options.hero)&&options.hero>=0&&options.hero<4?options.hero:0;
-  const cast=Array.isArray(options.cast)&&options.cast.length===4&&new Set(options.cast).size===4&&options.cast.every(i=>Number.isInteger(i)&&i>=0&&i<6)?options.cast:[0,1,2,3];
+  const cast=Array.isArray(options.cast)&&options.cast.length===4&&new Set(options.cast).size===4&&options.cast.every(i=>Number.isInteger(i)&&i>=0&&i<NAMES.length)?options.cast:[0,1,2,3];
   const g={v:5,bigDice:options.bigDice===true,finalActions:options.finalActions===true,reaction:null,turningPoint:null,skills:options.skills===true,hero,round:0,humans,rules,move:0,pending:null,lastEvent:null,players:cast.map(role=>({role,name:NAMES[role],cash:0,notes:0,wallet:[],chips:0,used:false,left:8,supply:8,lost:0,skips:0})),deck:[],tables:[],turn:0,roll:[],phase:'ready',history:[],settlements:[]};if(Number.isInteger(options.seed)&&options.seed>=0&&options.seed<=0xffffffff)g.random={seed:options.seed,counters:{}};g.deck=deck(gameRandom(g,'deck',rng));nextRound(g,rng);return g;
 }
 function log(g,s){g.history.unshift(s);g.history=g.history.slice(0,48);}
@@ -125,7 +126,12 @@ export function useSkill(g,actor,choice,rng=Math.random){
   if(role>=4){
    if(target!==actor||g.phase!=='choose'||g.turn!==actor)return false;
    if(role===4){if(!Number.isInteger(index)||index<0||index>=g.roll.length||!Number.isInteger(choice.value)||choice.value<1||choice.value>6||g.roll[index]===choice.value)return false;const old=g.roll[index];g.roll[index]=choice.value;detail=`将自己的${isBigRoll(g,index)?'大骰':'普通骰'}从${old}点改为${choice.value}点`;}
-   else{const picks=choice.indices;if(!Array.isArray(picks)||picks.length<1||picks.length>2||new Set(picks).size!==picks.length||!picks.every(i=>Number.isInteger(i)&&i>=0&&i<g.roll.length))return false;rng=gameRandom(g,'magic:'+g.round+':'+actor,rng);const old=picks.map(i=>g.roll[i]);picks.forEach(i=>g.roll[i]=1+Math.floor(rng()*6));detail=`不花筹码重掷${picks.length}颗：${old.join('、')} → ${picks.map(i=>g.roll[i]).join('、')}`;}g.lastEvent=null;
+   else if(role===6){
+    if(!Number.isInteger(index)||index<0||index>=g.roll.length||!Number.isInteger(choice.value)||choice.value<1||choice.value>6||g.roll[index]===choice.value)return false;
+    const from=g.roll[index],count=g.roll.filter(n=>n===from).length;g.roll=g.roll.map(n=>n===from?choice.value:n);
+    const loss=Math.floor(gameRandom(g,'overtime:'+g.round+':'+actor,rng)()*g.roll.length),large=isBigRoll(g,loss),value=g.roll.splice(loss,1)[0];p.left--;p.lost++;if(large){p.bigLeft=0;p.bigLost++;}
+    detail=`将${count}颗${from}点改成${choice.value}点；代价：随机失去${value}点${large?'大骰（计数×2）':'普通骰'}，本轮不恢复`;
+   }else{const picks=choice.indices;if(!Array.isArray(picks)||picks.length<1||picks.length>2||new Set(picks).size!==picks.length||!picks.every(i=>Number.isInteger(i)&&i>=0&&i<g.roll.length))return false;rng=gameRandom(g,'magic:'+g.round+':'+actor,rng);const old=picks.map(i=>g.roll[i]);picks.forEach(i=>g.roll[i]=1+Math.floor(rng()*6));detail=`不花筹码重掷${picks.length}颗：${old.join('、')} → ${picks.map(i=>g.roll[i]).join('、')}`;}g.lastEvent=null;
   }else if(role===1){
     if(zone==='table'){
       if(!Number.isInteger(face)||face<1||face>6)return false;const t=g.tables[face-1];if(!t.counts[target])return false;
@@ -153,6 +159,11 @@ export function useSkill(g,actor,choice,rng=Math.random){
 }
 export function botSkill(g,actor,rng=Math.random){
  if(!canSkill(g,actor))return null;const role=roleOf(g,actor);
+ if(role===6){
+  if(g.phase!=='choose'||g.turn!==actor||g.roll.length<2)return null;
+  const own=t=>sum(outcome(t).awards.filter(a=>a.player===actor).map(a=>a.amount)),gain=c=>Math.max(...[...new Set(c.roll)].map(v=>own(previewTable(c,v))-own(c.tables[v-1]))),base=gain(g);let best=null;
+  for(const from of new Set(g.roll))for(let value=1;value<=6;value++){if(from===value)continue;const changed=g.roll.map(n=>n===from?value:n);let score=0;for(let lost=0;lost<changed.length;lost++){const copy={...g,roll:changed.filter((_,i)=>i!==lost),players:g.players.map((p,i)=>i===actor?{...p,left:p.left-1,bigLeft:lost===0?0:p.bigLeft}:p)};score+=gain(copy)/changed.length;}if(score>base+10000&&(!best||score>best.score))best={target:actor,index:g.roll.indexOf(from),value,score};}return best;
+ }
  if(role>=4){if(g.phase!=='choose'||g.turn!==actor)return null;const face=botChoice(g,()=>.5),indices=g.roll.map((n,i)=>n!==face?i:-1).filter(i=>i>=0);if(!indices.length)return null;if(role===5)return {target:actor,indices:indices.slice(0,2)};const own=t=>sum(outcome(t).awards.filter(a=>a.player===actor).map(a=>a.amount)),base=sum(g.tables.map(own));let best=null;for(let index=0;index<g.roll.length;index++)for(let value=1;value<=6;value++){if(value===g.roll[index])continue;const copy={...g,roll:[...g.roll]};copy.roll[index]=value;const score=own(previewTable(copy,value))-own(g.tables[value-1]);if(!best||score>best.score)best={target:actor,index,value,score};}return best;}
  if(role===3){const targets=g.players.map((p,i)=>({i,p})).filter(x=>x.i!==actor&&x.p.wallet.length).sort((a,b)=>b.p.cash/b.p.notes-a.p.cash/a.p.notes);return targets.length?{target:targets[0].i}:null;}
  const own=t=>sum(outcome(t).awards.filter(a=>a.player===actor).map(a=>a.amount)),rivals=t=>sum(outcome(t).awards.filter(a=>a.player!==actor).map(a=>a.amount)),choices=[];
@@ -186,13 +197,13 @@ export function validSave(g){
   if(!g||g.v!==5||typeof g.skills!=='boolean'||!Number.isInteger(g.hero)||g.hero<0||g.hero>3||![1,2,3,4].includes(g.round)||![1,2,4].includes(g.humans)||!['half','all','classic'].includes(g.rules)||!['ready','choose','minigame','reaction','settled','finished'].includes(g.phase))return false;
   if(g.bigDice!==undefined&&typeof g.bigDice!=='boolean'||g.finalActions!==undefined&&typeof g.finalActions!=='boolean')return false;
   const int=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max,note=n=>int(n,90000)&&n>=10000&&n%10000===0;
-  if(g.random!==undefined&&(!g.random||!int(g.random.seed,0xffffffff)||!g.random.counters||Array.isArray(g.random.counters)||typeof g.random.counters!=='object'||Object.keys(g.random.counters).length>200||!Object.entries(g.random.counters).every(([k,v])=>/^(deck|setup:[1-4]|dice:[1-4]:[0-3]|mini:[1-4]:[0-3]:[1-6]|steal:[1-4]:[0-3]|decision:[1-4]:[0-3]|skip:[1-4]:[0-3]|magic:[1-4]:[0-3])$/.test(k)&&int(v,10000))))return false;
+  if(g.random!==undefined&&(!g.random||!int(g.random.seed,0xffffffff)||!g.random.counters||Array.isArray(g.random.counters)||typeof g.random.counters!=='object'||Object.keys(g.random.counters).length>200||!Object.entries(g.random.counters).every(([k,v])=>/^(deck|setup:[1-4]|dice:[1-4]:[0-3]|mini:[1-4]:[0-3]:[1-6]|steal:[1-4]:[0-3]|decision:[1-4]:[0-3]|skip:[1-4]:[0-3]|magic:[1-4]:[0-3]|overtime:[1-4]:[0-3])$/.test(k)&&int(v,10000))))return false;
   if(!int(g.turn,3)||!int(g.move,100)||!Array.isArray(g.players)||g.players.length!==4||!Array.isArray(g.tables)||g.tables.length!==6)return false;
-  if(!g.players.every(p=>(p.role===undefined||int(p.role,5))&&typeof p.name==='string'&&p.name.length<30&&int(p.left,9)&&int(p.chips,32)&&typeof p.used==='boolean'&&int(p.supply,33)&&int(p.lost,1)&&Array.isArray(p.wallet)&&p.wallet.every(note)&&p.cash===sum(p.wallet)&&p.notes===p.wallet.length&&int(p.cash,3000000)&&int(p.notes,54)&&int(p.skips,Number.MAX_SAFE_INTEGER)))return false;
+  if(!g.players.every(p=>(p.role===undefined||int(p.role,NAMES.length-1))&&typeof p.name==='string'&&p.name.length<30&&int(p.left,9)&&int(p.chips,32)&&typeof p.used==='boolean'&&int(p.supply,33)&&int(p.lost,2)&&Array.isArray(p.wallet)&&p.wallet.every(note)&&p.cash===sum(p.wallet)&&p.notes===p.wallet.length&&int(p.cash,3000000)&&int(p.notes,54)&&int(p.skips,Number.MAX_SAFE_INTEGER)))return false;
   if(new Set(g.players.map((_,i)=>roleOf(g,i))).size!==4)return false;
   if(!Array.isArray(g.deck)||!g.deck.every(note)||!Array.isArray(g.roll)||!g.roll.every(n=>int(n,6)&&n>0))return false;
   if(!g.tables.every((t,i)=>t.face===i+1&&t.name===CASINOS[i]&&Object.hasOwn(EFFECTS,t.effect)&&Array.isArray(t.notes)&&t.notes.length===2&&t.notes.every(note)&&['counts','first','last'].every(key=>Array.isArray(t[key])&&t[key].length===4&&t[key].every(n=>int(n,key==='counts'?33:100)))))return false;
-  if(g.bigDice){if(!g.players.every(p=>int(p.bigLeft,1)&&p.bigLeft<=p.left&&int(p.bigLost,1)&&p.bigLost<=p.lost)||!g.tables.every(t=>Array.isArray(t.big)&&t.big.length===4&&t.big.every((n,i)=>int(n,4)&&n<=t.counts[i]))||sum(g.players.map(p=>p.bigLeft+p.bigLost))+sum(g.tables.flatMap(t=>t.big))!==4)return false;}else if(g.players.some(p=>p.bigLeft||p.bigLost)||g.tables.some(t=>t.big?.some(n=>n!==0)))return false;
+  if(g.bigDice){if(!g.players.every(p=>int(p.bigLeft,1)&&p.bigLeft<=p.left&&int(p.bigLost,2)&&p.bigLost<=p.lost)||!g.tables.every(t=>Array.isArray(t.big)&&t.big.length===4&&t.big.every((n,i)=>int(n,4)&&n<=t.counts[i]))||sum(g.players.map(p=>p.bigLeft+p.bigLost))+sum(g.tables.flatMap(t=>t.big))!==4)return false;}else if(g.players.some(p=>p.bigLeft||p.bigLost)||g.tables.some(t=>t.big?.some(n=>n!==0)))return false;
   if(g.phase==='reaction'){const r=g.reaction;if(!g.finalActions||!g.skills||!g.players.every(p=>p.left===0)||!r||!Array.isArray(r.order)||r.order.length>3||new Set(r.order).size!==r.order.length||!r.order.every(i=>Number.isInteger(i)&&i>=0&&i<4)||!int(r.index,r.order.length-1)||r.order[r.index]!==g.turn||!hasSkillTarget(g,g.turn)||!Array.isArray(g.settlements)||g.settlements.length)return false;}else if(g.reaction!=null)return false;
   if(!g.players.every((p,i)=>sum(g.tables.map(t=>t.counts[i]))+p.left+p.lost===p.supply))return false;
   if(sum(g.players.map(p=>p.supply))!==(initialSupply(g)))return false;

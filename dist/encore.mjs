@@ -4,6 +4,7 @@ import {claimMarkup} from './claims.mjs';
 
 export function rivalLine(g,face,kind='invest'){
  const i=g.turn,role=roleOf(g,i),t=g.tables[face-1],hasBig=placedBig(g,face),contested=t?.counts.some((n,j)=>j!==i&&n>0);
+ if(role===6)return kind==='skip'?'这份预算，留给下一次。':'今天的加班，到此为止。';
  if(role>=4)return role===4?'这次，让点数听话。':'再看一次，结果也许不同。';
  if(kind==='pass')return ['先看看你们。','这一轮，我收枪。','这笔交易不划算。','今晚先放你一马。'][role];
  if(kind==='skip')return ['换一手，再铺开。','这手不值。等下一次。','花一枚筹码，换个机会。','这次我先不跟。'][role];
@@ -15,7 +16,7 @@ export function createRivalBeat({prefs}){
  function clear(){clearTimeout(timer);root?.remove();root=null;}
  function play(g,face,kind='invest'){
   clear();const i=g.turn;root=document.createElement('aside');root.className=`rival-beat rival-${roleOf(g,i)}`;root.setAttribute('aria-live','polite');root.style.setProperty('--pc',COLORS[i]);
-  root.innerHTML=`<img src="${CINEMA_ASSETS.portraits[roleOf(g,i)]}" alt=""><div><small>${g.players[i].name} · ${kind==='pass'?'收手':kind==='skip'?'拨出筹码':face+'号赌场'}</small><p>「${rivalLine(g,face,kind)}」</p></div><span class="rival-prop" aria-hidden="true">${['◆','⌖','◉','♥','♠','✦'][roleOf(g,i)]}</span>`;
+  root.innerHTML=`<img src="${CINEMA_ASSETS.portraits[roleOf(g,i)]}" alt=""><div><small>${g.players[i].name} · ${kind==='pass'?'收手':kind==='skip'?'拨出筹码':face+'号赌场'}</small><p>「${rivalLine(g,face,kind)}」</p></div><span class="rival-prop" aria-hidden="true">${['◆','⌖','◉','♥','♠','✦','◷'][roleOf(g,i)]}</span>`;
   if(!prefs().motion)root.classList.add('still');document.body.append(root);timer=setTimeout(clear,prefs().fast?750:2200);
  }
  return {play,clear};

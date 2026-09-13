@@ -12,19 +12,19 @@ export function rivalLine(g,face,kind='invest'){
  return [t?.counts[i]?'继续加注，守住这桌。':'先占一桌，还有骰子慢慢来。',contested?'看清局面，再落骰。':g.players[i].used?'这一手，靠骰子说话。':'先落子，枪还在我手里。',contested?'这桌的账，该重新算了。':'先留个位置。',contested?'这桌的奖金，我也想要。':'这张钱，我先占着。'][role];
 }
 export function createRivalBeat({prefs}){
- let root,timer;
+ let root,timer,lastLineAt=0;
  function clear(){clearTimeout(timer);root?.remove();root=null;}
  function play(g,face,kind='invest'){
-  clear();const i=g.turn;root=document.createElement('aside');root.className=`rival-beat rival-${roleOf(g,i)}`;root.setAttribute('aria-live','polite');root.style.setProperty('--pc',COLORS[i]);
+  if(Date.now()-lastLineAt<9000||prefs().pace==='quick')return;lastLineAt=Date.now();clear();const i=g.turn;root=document.createElement('aside');root.className=`rival-beat rival-${roleOf(g,i)}`;root.setAttribute('aria-live','polite');root.style.setProperty('--pc',COLORS[i]);
   root.innerHTML=`<img src="${CINEMA_ASSETS.portraits[roleOf(g,i)]}" alt=""><div><small>${g.players[i].name} · ${kind==='pass'?'收手':kind==='skip'?'拨出筹码':face+'号赌场'}</small><p>「${rivalLine(g,face,kind)}」</p></div><span class="rival-prop" aria-hidden="true">${['◆','⌖','◉','♥','♠','✦','◷'][roleOf(g,i)]}</span>`;
   if(!prefs().motion)root.classList.add('still');document.body.append(root);timer=setTimeout(clear,prefs().fast?750:2200);
  }
  return {play,clear};
 }
-export function turningPointMarkup(g,{replay=false}={}){
+export function turningPointMarkup(g,{replay=false,whole=false}={}){
  const e=g.turningPoint;if(!e||!Array.isArray(e.notes)||!e.notes.length)return '';
  const who=i=>i===null?'待分配':g.players[i].name,m=n=>n/10000+'万';
- return `<section class="turning-point ${replay?'turning-replay':''}" aria-label="本轮关键转折"><div class="turning-kicker">${replay?'REPLAY / 当时的局面':'ROUND HIGHLIGHT'}</div><h3>${g.players[e.actor].name} · ${e.action}</h3><p>${e.face}号 ${g.tables[e.face-1].name}，${e.notes.map(n=>`${m(n.amount)}：${who(n.from)} → ${who(n.to)}`).join('；')}。</p>${e.beforeCounts?`<div class="turning-counts">${e.afterCounts.map((n,i)=>`<span style="--pc:${COLORS[i]}"><small>${g.players[i].name}</small><b><i class="turning-before">${e.beforeCounts[i]}</i> <i>→</i> <strong class="turning-after">${n}</strong></b><em>${e.ties.includes(i)?'撞数出局':e.beforeTies.includes(i)?'解除撞数':'计数'}</em></span>`).join('')}</div>`:''}${replay?claimMarkup(e,g.hero,{compact:true}):'<button class="quiet" data-action="replay-turn">回看这一手 ↗</button>'}<small class="turning-footnote">记录奖金暂领权变化；本轮最终派彩以结算表为准。</small></section>`;
+ return `<section class="turning-point ${replay?'turning-replay':''}" aria-label="${whole?'全局关键转折':'本轮关键转折'}"><div class="turning-kicker">${replay?'REPLAY / 当时的局面':whole?'TONIGHT’S HIGHLIGHT · 第'+(e.round||g.round)+'轮':'ROUND HIGHLIGHT'}</div><h3>${g.players[e.actor].name} · ${e.action}</h3><p>${e.face}号 ${g.tables[e.face-1].name}，${e.notes.map(n=>`${m(n.amount)}：${who(n.from)} → ${who(n.to)}`).join('；')}。</p>${e.beforeCounts?`<div class="turning-counts">${e.afterCounts.map((n,i)=>`<span style="--pc:${COLORS[i]}"><small>${g.players[i].name}</small><b><i class="turning-before">${e.beforeCounts[i]}</i> <i>→</i> <strong class="turning-after">${n}</strong></b><em>${e.ties.includes(i)?'撞数出局':e.beforeTies.includes(i)?'解除撞数':'计数'}</em></span>`).join('')}</div>`:''}${replay?claimMarkup(e,g.hero,{compact:true}):'<button class="quiet" data-action="replay-turn">回看这一手 ↗</button>'}<small class="turning-footnote">记录奖金暂领权变化；本轮最终派彩以结算表为准。</small></section>`;
 }
 export function reactionMarkup(g){
  if(g.phase!=='reaction')return '';const r=g.reaction,i=g.turn;

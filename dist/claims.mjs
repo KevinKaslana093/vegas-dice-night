@@ -16,15 +16,17 @@ export function createClaimFeedback({prefs,hero}){
  const reduced=()=>!prefs().motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
  function clear(){clearTimeout(hideTimer);panel?.remove();panel=null;holdUntil=0;last=null;}
  function play(event,{root=document,settled=false,toast=true}={}){
-  if(!event||event===last)return;const html=claimMarkup(event,hero(),{settled});if(!html)return;
-  clear();last=event;holdUntil=Date.now()+(prefs().fast?180:1450);
+  if(!event||event===last)return;const html=claimMarkup(event,hero(),{settled});
+  clear();last=event;holdUntil=Date.now()+(prefs().fast?220:1350);
   const table=root.querySelector(`.casino-${event.face},.lt-${event.face}`);
   if(table){
    table.classList.add('claim-table-impact');
-   event.notes?.forEach(n=>{const note=table.querySelector(`[data-note="${n.index}"]`);if(!note)return;note.classList.add('claim-note-changed');if(!reduced())note.animate([{transform:'rotateY(-75deg) scale(.88)',opacity:.35},{transform:'rotateY(0) scale(1.08)',opacity:1},{transform:'rotateY(0) scale(1)'}],{duration:650,easing:'cubic-bezier(.2,.8,.2,1)'});});
-   if(!reduced())for(const i of event.ties){const pile=table.querySelector(`[data-player="${i}"]`);pile?.animate([{background:'#5c1827',boxShadow:'0 0 0 1px #ff687a'},{background:'#b7354b',boxShadow:'0 0 18px #ff526daa'},{background:'#5c1827',boxShadow:'0 0 0 1px #ff687a'}],{duration:1000,iterations:2});}
+   const forecast=table.querySelector('.forecast');if(forecast){forecast.textContent=event.kind==='tie'?'刚刚撞数 · 同计数一起出局':event.notes?.length?'刚刚落桌 · '+event.notes.map(n=>`${claimMoney(n.amount)}${n.to===null?'待分配':n.to===hero()?'转为你暂领':'转为'+(event.names?.[n.to]||CLAIM_NAMES[n.to])+'暂领'}`).join(' / '):'计数已更新 · 奖金暂领者未变';forecast.setAttribute('aria-live','polite');}
+   if(!reduced())table.querySelector(`[data-player="${event.actor}"]`)?.animate([{transform:'scale(.92)',filter:'brightness(1)'},{transform:'scale(1.16)',filter:'brightness(1.8)'},{transform:'scale(1)',filter:'brightness(1)'}],{delay:prefs().fast?0:400,duration:300});
+   event.notes?.forEach(n=>{const note=table.querySelector(`[data-note="${n.index}"]`);if(!note)return;note.classList.add('claim-note-changed');if(!reduced())note.animate([{transform:'rotateY(-75deg) scale(.88)',opacity:.35},{transform:'rotateY(0) scale(1.08)',opacity:1},{transform:'rotateY(0) scale(1)'}],{delay:prefs().fast?50:700,duration:450,easing:'cubic-bezier(.2,.8,.2,1)'});});
+   if(!reduced())for(const i of event.ties){const pile=table.querySelector(`[data-player="${i}"]`);pile?.animate([{background:'#5c1827',boxShadow:'0 0 0 1px #ff687a'},{background:'#b7354b',boxShadow:'0 0 18px #ff526daa'},{background:'#5c1827',boxShadow:'0 0 0 1px #ff687a'}],{delay:prefs().fast?0:400,duration:450,iterations:2});}
   }
-  if(toast){panel=document.createElement('aside');panel.className='claim-toast';panel.setAttribute('aria-live','polite');panel.innerHTML=html+'<button class="claim-dismiss" aria-label="收起奖金变化提示">×</button>';document.body.append(panel);panel.querySelector('button').onclick=()=>{panel?.remove();panel=null;holdUntil=0;};if(!reduced())panel.animate([{opacity:0,transform:'translateY(-12px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'ease-out'});hideTimer=setTimeout(()=>{panel?.remove();panel=null;},prefs().fast?2600:4200);}
+  if(toast&&html){panel=document.createElement('aside');panel.className='claim-toast';panel.setAttribute('aria-live','polite');panel.innerHTML=html+'<button class="claim-dismiss" aria-label="收起奖金变化提示">×</button>';document.body.append(panel);panel.querySelector('button').onclick=()=>{panel?.remove();panel=null;holdUntil=0;};if(!reduced())panel.animate([{opacity:0,transform:'translateY(-12px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'ease-out'});hideTimer=setTimeout(()=>{panel?.remove();panel=null;},prefs().fast?2600:4200);}
  }
  return {play,clear,get remaining(){return Math.max(0,holdUntil-Date.now());}};
 }

@@ -11,7 +11,7 @@ export function createCinema({names,colors,skills,die,prefs}){
  const stage=document.createElement('dialog');stage.id='cinema';stage.setAttribute('aria-label','牌桌演出');document.body.append(stage);
  const textures={};for(const key of ['star','spark','smoke']){textures[key]=new Image();textures[key].src=CINEMA_ASSETS[key];}
  for(const src of CINEMA_ASSETS.portraits){const img=new Image();img.src=src;}
- let current=null,raf=0,audioContext=null;const playing=new Set();
+ let current=null,raf=0,audioContext=null;const playing=new Set(),seenSkills=new Set();
  const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const lowMotion=()=>!prefs().motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
  function sample(key){if(!prefs().sound||document.hidden)return;const src=CINEMA_ASSETS[key];if(!src)return;
@@ -28,7 +28,7 @@ export function createCinema({names,colors,skills,die,prefs}){
  function resultMarkup(e){const role=e.role??e.actor;if(role===6){const lost=e.label?.match(/随机失去([1-6])点(大骰|普通骰)/);return `<div class="clockout-prop"><span>18:00</span><b>CLOCK OUT</b></div><h3>准点下班</h3>${lost?`<div class="clockout-cost">${die(Number(lost[1]))}<strong>−1 ${lost[2]}${lost[2]==='大骰'?' ×2':''}</strong><small>本轮离场 · 下轮恢复</small></div>`:''}<p>${safe(e.label||'整组改点 · 随机失去一颗骰子')}</p>`;}if(role>=4)return `<div class="new-skill-prop">${role===4?'♠':'✦'}</div><h3>${role===4?'精准发牌':'袖中乾坤'}</h3><p>${safe(e.label||'已改变自己的掷骰结果')}</p>`;
   if(role===0)return `<div class="bonus-die">${die(6)}<strong>+1</strong></div><h3>本轮 9 颗骰子</h3><p>初来乍到 · 额外骰子已入手</p>`;
   if(role===1)return `<div class="snipe-prop"><div class="crosshair"></div><div class="shot-die">${die(e.value||e.face||1)}</div><b class="shot-word">OUT</b></div><h3>一颗${e.big?'大骰 ×2':'骰子'} · 出局</h3><p>${safe(e.targetName??names[e.target])} · ${e.zone==='table'?e.face+'号赌场':e.zone==='roll'?'刚掷出的骰子':'手中骰子'} ${e.before} → ${e.after}</p>`;
-  if(role===2)return `<div class="trade-prop"><div class="trade-a"><span class="trade-num">${e.a}</span><small>${safe(names[e.actor])}</small></div><b>⇄</b><div class="trade-b"><span class="trade-num">${e.b}</span><small>${safe(e.targetName??names[e.target])}</small></div><i class="deal-stamp">DEAL</i></div><h3>${e.face}号赌场 · 强制交易</h3><p>骰子 ${e.a} ⇄ ${e.b} · ${e.chips}枚筹码交给${safe(e.targetName??names[e.target])}</p>`;
+  if(role===2)return `<div class="trade-prop"><div class="trade-a"><span class="trade-num">${e.a}</span><small>${safe(names[e.actor])}</small></div><b>⇄</b><div class="trade-b"><span class="trade-num">${e.b}</span><small>${safe(e.targetName??names[e.target])}</small></div><i class="deal-stamp">DEAL</i></div><h3>${e.face}号赌场 · 强制交易</h3><p>计数 ${e.a} ⇄ ${e.b} · ${e.chips}枚筹码交给${safe(e.targetName??names[e.target])}</p>`;
   return `<div class="charm-prop"><i class="fanned-card fanned-a">♠</i><i class="fanned-card fanned-b">♣</i><div class="stolen-note"><small>VEGAS BANK</small><strong>${money(e.amount)}</strong><span>♥</span></div></div><h3>这张，归我了。</h3><p>从${safe(e.targetName??names[e.target])}抽走一张 ${money(e.amount)} 钞票</p>`;
  }
  function cubes(values,bigIndex=-1){const angles=[[0,0],[90,0],[0,-90],[0,90],[-90,0],[0,180]];return values.map((v,i)=>{const [x,y]=angles[v-1];return `<div class="cube-holder ${i===bigIndex?'big-cube':''}" style="--i:${i}"><div class="cube" data-result="${v}" style="--rx:${x}deg;--ry:${y}deg;--spin:${720+i*90}deg">${[1,2,3,4,5,6].map(n=>`<div class="cube-face cf-${n}">${die(n)}</div>`).join('')}</div></div>`;}).join('');}
@@ -36,7 +36,8 @@ export function createCinema({names,colors,skills,die,prefs}){
   if(current)return false;
   const reduced=lowMotion(),fast=prefs().fast;
   if(type==='skill'&&prefs().cutins===false&&!event.demo){sting(event.role??event.actor);queueMicrotask(done);return true;}
-  const duration=reduced?220:type==='roll'?(fast?330:1050):fast?850:2900;
+  const key=event.role??event.actor,repeat=!event.demo&&type==='skill'&&(prefs().repeatCutins==='never'||prefs().repeatCutins==='first'&&seenSkills.has(key));if(type==='skill'&&!event.demo)seenSkills.add(key);
+  const duration=reduced?220:type==='roll'?(fast?330:1050):repeat?850:fast?850:2900;
   const actor=event.actor??0,visual=event.role??actor;
   stage.className=`cinema cinema-${type} actor-${visual} ${reduced?'cinema-reduced':''}`;
   stage.style.setProperty('--accent',colors[actor]);stage.style.setProperty('--duration',duration+'ms');stage.style.setProperty('--speed',duration/2900);

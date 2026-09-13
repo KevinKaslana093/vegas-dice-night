@@ -11,7 +11,8 @@ export function createMusic({prefs}){
  let context,gain,unlocked=false,current='',desired={track:'lobby',paused:false},timer=0,revision=0,transition=false,last='',pending=false,observer;
  const positions=new Map();
  const enabled=()=>prefs().music!==false&&Number(prefs().musicVolume??.28)>0;
- const ducked=()=>!!document.querySelector('#cinema[open]');
+ const ducked=()=>!!(document.querySelector('#cinema[open]')||Date.now()<duckUntil);
+ let duckUntil=0,duckTimer=0;
  const volume=()=>Math.max(0,Math.min(1,Number(prefs().musicVolume??.28)||0))*(ducked()?.3:1);
  function ramp(value,seconds=.25){
   if(gain){const now=context.currentTime;gain.gain.cancelScheduledValues(now);gain.gain.setTargetAtTime(value,now,Math.max(.015,seconds/3));}
@@ -60,6 +61,7 @@ export function createMusic({prefs}){
  if(cinema){observer=new MutationObserver(()=>refresh());observer.observe(cinema,{attributes:true,attributeFilter:['open']});}
  media.addEventListener('error',()=>{pending=false;});
  return {
+  duck(ms=500){duckUntil=Date.now()+ms;clearTimeout(duckTimer);refresh(true);duckTimer=setTimeout(()=>{duckUntil=0;refresh(true);},ms+20);},
   update(state={}){desired={...desired,...state};if(!MUSIC_TRACKS[desired.track])desired.track='lobby';refresh();},
   get track(){return current;}
  };

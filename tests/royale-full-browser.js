@@ -2,7 +2,7 @@ async(page)=>{
  const ctx=await page.context().browser().newContext({viewport:{width:390,height:844}}),p=await ctx.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
  try{
   await p.addInitScript(()=>localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({sound:false,fast:true,motion:false,cutins:false})));
-  await p.goto('http://127.0.0.1:4317');await p.locator('[data-pick="1"]').click();await p.locator('[data-action="start"]').click();await p.locator('#modal [data-action="close"]').click();
+  await p.goto('http://127.0.0.1:4317');await p.locator('.lobby-start').click();await p.locator('[data-pick="5"]').click();await p.locator('[data-action="start"]').click();await p.locator('#modal [data-action="close"]').click();
   const phases=new Set();let complete=false;
   for(let n=0;n<1000;n++){
    const r=await p.evaluate(async()=>{
@@ -22,6 +22,6 @@ async(page)=>{
     return {phase:g.phase};
    });phases.add(r.phase);if(r.complete){complete=true;break;}await p.waitForTimeout(75);
   }
-  if(!complete)throw Error('UI game failed to finish');if(errors.length)throw Error(errors.join(';'));await p.screenshot({path:'output/playwright/royale-full-game.png'});return {fourRounds:true,phases:[...phases],noErrors:true};
+  if(!complete){await p.screenshot({path:'output/playwright/full-failure.png'});console.log(await p.evaluate(()=>({save:JSON.parse(localStorage.getItem('vegas-night-save-v5')),modal:document.querySelector('#modal').className,hidden:document.hidden})));throw Error('UI game failed to finish: '+errors.join(';'));}if(errors.length)throw Error(errors.join(';'));await p.screenshot({path:'output/playwright/royale-full-game.png'});return {fourRounds:true,phases:[...phases],noErrors:true};
  }finally{await ctx.close();}
 }

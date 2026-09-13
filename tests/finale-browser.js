@@ -1,0 +1,14 @@
+async(page)=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:4317');
+ const finished=await page.evaluate(async()=>{const c=await import('./core.mjs'),g=c.createGame(4,Math.random,{seed:8000,hero:0,cast:[5,4,1,3],skills:true,bigDice:true,finalActions:true,rules:'half'});for(let n=0;n<1000&&g.phase!=='finished';n++){if(g.phase==='settled'){c.nextRound(g);continue;}if(g.phase==='reaction'){c.passReaction(g);continue;}if(g.phase==='ready')c.rollDice(g);else if(g.phase==='minigame')c.miniAction(g,c.miniBotAction(g));else c.placeDice(g,c.botChoice(g));}return g;});
+ const ctx=await page.context().browser().newContext({viewport:{width:1280,height:900}}),p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));
+ await p.addInitScript(g=>{if(!sessionStorage.getItem('fixture')){localStorage.setItem('vegas-night-save-v5',JSON.stringify(g));localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({sound:false,motion:true,fast:false,cutins:true}));sessionStorage.setItem('fixture','1');}},finished);
+ await p.goto('http://127.0.0.1:4317');await p.locator('.lobby-continue').click();await p.locator('#app [data-action="summary"]').first().click();await p.locator('[data-action="rematch"]').click();
+ const replay=await p.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));if(replay.round!==1||replay.random.seed!==8000||replay.players.map(x=>x.role).join()!=finished.players.map(x=>x.role).join())throw Error('UI rematch mismatch');
+ await p.locator('#modal [data-action="close"]').click();await p.locator('#app [data-action="settings"]').click();
+ const skills=['初来乍到','正义执行','主场优势','魅力四射','精准发牌','袖中乾坤'];
+ for(let i=0;i<6;i++){await p.locator('[data-preview="'+i+'"]').click();await p.locator('#cinema[open]').waitFor();if(await p.locator('#cinema h2').innerText()!==skills[i])throw Error('cutin identity '+i);if(i>=4){await p.waitForTimeout(450);await p.screenshot({path:'output/playwright/cutin-'+i+'.png'});}await p.locator('.cinema-skip').click();}
+ await p.locator('#modal [data-action="close"]').click();await p.locator('#app [data-action="pause"]').click();await p.locator('[data-action="restart-prompt"]').click();await p.locator('[data-action="again"]').click();await p.locator('.lobby-start').click();await p.keyboard.press('ArrowRight');if(await p.locator('.hero-stage').getAttribute('data-hero-stage')!=='0')throw Error('keyboard hero');
+ const stage=await p.locator('.hero-stage').boundingBox();await p.mouse.move(stage.x+stage.width*.7,stage.y+40);await p.mouse.down();await p.mouse.move(stage.x+stage.width*.3,stage.y+40,{steps:8});await p.mouse.up();if(await p.locator('.hero-stage').getAttribute('data-hero-stage')!=='1')throw Error('swipe hero');
+ if(errors.length)throw Error(errors.join(';'));await ctx.close();return {rematch:true,sixCutins:true,keyboardAndSwipe:true,errors};
+}

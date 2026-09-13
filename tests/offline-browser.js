@@ -1,0 +1,7 @@
+async(page)=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('file:///C:/Users/34228/Documents/Codex/2026-09-11/w/outputs/%E6%8B%89%E6%96%AF%E7%BB%B4%E5%8A%A0%E6%96%AF-%E9%AA%B0%E5%AD%90%E4%B9%8B%E5%A4%9C.html');await page.locator('.lobby-start').waitFor({timeout:5000});
+ await page.locator('.lobby-start').click();await page.locator('[data-pick="5"]').click();await page.locator('[data-action="start"]').click();await page.locator('#modal [data-action="close"]').click();await page.waitForTimeout(900);await page.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());
+ await page.locator('#app [data-action="roll"]').click();await page.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());
+ await page.locator('#app [data-skill="0"]:visible').first().click();await page.locator('[data-magic-index="0"]').click();await page.locator('[data-magic-index="1"]').click();await page.locator('[data-action="skill-confirm"]').click();await page.evaluate(()=>document.querySelector('#cinema[open] .cinema-skip')?.click());await page.locator('[data-action="skill-close"]').waitFor();
+ const bad=await page.locator('img').evaluateAll(imgs=>imgs.filter(i=>!i.complete||!i.naturalWidth).map(i=>i.src.slice(0,100)));if(bad.length||errors.length)throw Error(JSON.stringify({bad,errors}));console.log('Offline file: lobby, magician selection, roll, two-dice skill, embedded portraits pass');
+}

@@ -56,7 +56,7 @@ export function createFinalExam({cinema,die,prefs,onExit}){
  function act(a){if(busy||cinema.active)return;const g=state.g,previous=g.lastEvent,choice=a.choice,event=a.type==='skill'?{actor:1,target:choice.target,face:choice.face,zone:choice.zone,value:choice.zone==='roll'?g.roll[choice.index]:choice.face,big:choice.big,before:choice.zone==='table'?tableWeight(g.tables[choice.face-1],choice.target):g.players[choice.target].left,human:true}:null;
  if(!examAction(state,a))return;save();skillOpen=false;shot=null;
  const done=()=>{busy=false;if(!root)return;render(true);if(g.lastEvent!==previous)feedback.play(g.lastEvent,{root,settled:examResult(state)!=='playing'});};
- if(a.type==='roll'||a.type==='skill'){busy=true;if(event){event.after=event.before-(event.big&&event.zone==='table'?2:1);event.label=g.history[0];}cinema.play(a.type==='roll'?'roll':'skill',event||{actor:1,values:[...g.roll]},done);}else done();
+ if(a.type==='roll'||a.type==='skill'){busy=true;if(event){event.after=event.before-(event.big&&event.zone==='table'?2:1);event.label=g.history[0];Object.assign(event,{role:1,name:NAMES[1],skillName:'正义执行',targetName:NAMES[event.target]});}cinema.play(a.type==='roll'?'roll':'skill',event||{actor:1,role:1,name:NAMES[1],values:[...g.roll],bigIndex:g.players[1].bigLeft?0:-1},done);}else done();
  }
  function click(e){const b=e.target.closest('button');if(!b||b.disabled||busy||cinema.active)return;if(b.dataset.examFace){act({type:'select',face:Number(b.dataset.examFace)});return;}if(b.dataset.shot){shot=b.dataset.shot;render(true);return;}const a=b.dataset.exam;
  if(a==='exit'||a==='finish'){close();return;}if(a==='retry'){feedback.clear();state=createExam();skillOpen=false;shot=null;save();render(true);return;}

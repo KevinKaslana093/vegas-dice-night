@@ -24,6 +24,12 @@ jobs:
         run: npm test
       - name: Validate game files
         run: npm run build
+      - name: Package offline game
+        run: npm run export
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offline-game
+          path: output/vegas-dice-night.html
       - name: Prepare public files
         run: |
           node -e "const fs=require('fs'),path=require('path');fs.cpSync('dist','_site',{recursive:true,filter:p=>!path.basename(p).startsWith('.')});fs.writeFileSync('_site/.nojekyll','');"
@@ -45,3 +51,22 @@ jobs:
       - name: Publish GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: offline-game
+          path: output
+      - name: Publish V8 offline download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view v8.0.0 >/dev/null 2>&1; then
+            gh release create v8.0.0 output/vegas-dice-night.html --target "$GITHUB_SHA" --title "V8.0 · 入夜大厅与六人阵容" --notes-file RELEASE-V8.md
+          fi

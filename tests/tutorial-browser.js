@@ -24,7 +24,7 @@ async(parent)=>{
   await page.locator('[data-lesson="finish"]').click();
   await page.locator('.exam-root').waitFor();
   await page.locator('.exam-root [data-exam="exit"]').click();
-  if(await page.locator('#modal [data-pick="1"]').getAttribute('aria-pressed')!=='true')throw Error('Cowboy not selected on graduation');
+  if(!(await page.locator('.lobby-ident').innerText()).includes('筹码牛仔'))throw Error('Cowboy not selected on graduation');
   if(await page.evaluate(()=>localStorage.getItem('vegas-night-save-v5'))!==normal)throw Error('Normal save overwritten');
  }
  if(errors.length)throw Error(errors.join('\n'));

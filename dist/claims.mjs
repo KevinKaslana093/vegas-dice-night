@@ -1,12 +1,12 @@
 import {NAMES,COLORS,CASINOS} from './core.mjs';
 import {CINEMA_ASSETS} from './cinema.mjs';
 
-const CLAIM_NAMES=['丹宁','牛仔','老板','月兔'];
+const CLAIM_NAMES=['丹宁','牛仔','老板','月兔','霜序','夜幕'];
 const claimMoney=n=>`${Math.abs(n)/10000}万`;
 export function claimMarkup(event,hero,{settled=false,compact=false}={}){
  if(!event||(!event.notes?.length&&!event.changes?.length&&event.kind!=='tie'))return '';
- const who=i=>i===null?'待分配':i===hero?'你':CLAIM_NAMES[i];
- const owner=i=>i===null?'<span class="claim-owner unclaimed">待分配</span>':`<span class="claim-owner" style="--claim-color:${COLORS[i]}"><img src="${CINEMA_ASSETS.portraits[i]}" alt="">${who(i)}</span>`;
+ const who=i=>i===null?'待分配':i===hero?'你':CLAIM_NAMES[event.roles?.[i]??i]||event.names?.[i];
+ const owner=i=>i===null?'<span class="claim-owner unclaimed">待分配</span>':`<span class="claim-owner" style="--claim-color:${COLORS[i]}"><img src="${CINEMA_ASSETS.portraits[event.roles?.[i]??i]}" alt="">${who(i)}</span>`;
  const title=event.kind==='tie'?'撞数！奖金重新排位':event.beforeTies?.some(i=>!event.ties.includes(i))?'平局打破 · 奖金易主':event.notes?.some(n=>n.from!==null)?'奖金易主':'占住奖金';
  return `<section class="claim-report ${compact?'claim-compact':''}" aria-label="本次奖金归属变化"><header><span>${event.face}号 · ${CASINOS[event.face-1]}</span><b>${title}</b></header>${event.notes?.length?`<div class="claim-transfers">${event.notes.map(n=>`<div class="claim-transfer"><strong>${claimMoney(n.amount)}</strong>${owner(n.from)}<span class="claim-arrow" aria-label="转为">→</span>${owner(n.to)}</div>`).join('')}</div>`:''}<div class="claim-deltas">${event.changes.map(c=>`<span class="${c.delta<0?'claim-loss':'claim-gain'}">${who(c.player)} <b>${c.delta<0?'暂失':'暂领'} ${claimMoney(c.delta)}</b></span>`).join('')}${event.kind==='tie'&&!event.changes.length?'<span class="claim-loss">同数量出局 · 本桌暂领金额未变</span>':''}</div><small>${settled?'下注结束 · 最终派彩见结算':'以上为暂领变化 · 最终派彩见结算'}</small></section>`;
 }

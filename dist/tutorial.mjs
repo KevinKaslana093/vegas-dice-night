@@ -85,6 +85,7 @@ export function createTutorial({cinema,die,prefs=()=>({motion:true,fast:false}),
   const previousNotice=lesson.notice;if(!advanceLesson(lesson,a))return;save();const showImpact=()=>{if(root&&lesson.notice!==previousNotice)feedback.play(lesson.notice,{root,settled:lesson.step>=21});};
   if(a==='roll'||a==='fire'){
    playing=true;const event=a==='roll'?{actor:1,values:[...lesson.g.roll],bigIndex:lesson.g.players[1].bigLeft?0:-1}:{actor:1,target:2,face:6,zone:'table',value:6,before:3,after:2,human:true,label:'狙掉老板在6号赌场的一颗骰子'};
+   Object.assign(event,{role:1,name:NAMES[1],skillName:'正义执行',targetName:NAMES[2]});
    cinema.play(a==='roll'?'roll':'skill',event,()=>{playing=false;if(root){render();showImpact();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}});
   }else{render();showImpact();root.querySelector('.lesson-hot')?.focus({preventScroll:true});}
  }

@@ -1,0 +1,20 @@
+Music by Shane Ivers — Silverman Sound Studios
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Opening Move
+https://www.silvermansound.com/free-music/opening-move
+Original MP3: https://www.silvermansound.com/wp-content/uploads/opening-move.mp3
+
+Signs To Nowhere
+https://www.silvermansound.com/free-music/signs-to-nowhere
+Original MP3: https://www.silvermansound.com/wp-content/uploads/signs-to-nowhere.mp3
+
+Swing Has Swung
+https://www.silvermansound.com/free-music/swing-has-swung
+Original MP3: https://www.silvermansound.com/wp-content/uploads/swing-has-swung.mp3
+
+Changes for this game: loudness normalization (-19 LUFS target), 128 kbps MP3 encoding, runtime looping and fades. No composition or performance by the game authors is claimed. No endorsement by Shane Ivers is implied.
+Permission verified on the three author track pages on 2026-09-13. Each specifies CC BY 4.0 and permits commercial projects with attribution.
+In-game attribution: Settings -> Credits / 素材与制作. Also embedded in the standalone offline HTML game.

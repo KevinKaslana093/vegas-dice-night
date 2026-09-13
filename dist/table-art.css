@@ -38,3 +38,5 @@
  .lesson-board .lesson-center{padding:15px 6px;gap:8px}.lesson-board .lesson-center>span{font-size:6px;letter-spacing:.06em}.lesson-board .lesson-center>b{font-size:12px}.lesson-board .lesson-center>small{font-size:8px}
  .basic-play{padding:17px 7px;gap:12px}.basic-play::before{inset:0 -6px;background-size:auto 100%;border-radius:28px;opacity:.85}
 }
+
+.music-volume{flex-wrap:wrap;gap:12px}.music-volume output{margin-left:auto;color:#e5c488}.music-volume input[type=range]{width:100%;accent-color:#c8a466;min-height:30px}.settings .fineprint{line-height:1.7}

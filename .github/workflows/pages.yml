@@ -63,10 +63,11 @@ jobs:
         with:
           name: offline-game
           path: output
-      - name: Publish V8 offline download
+      - name: Publish offline download
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v8.0.0 >/dev/null 2>&1; then
-            gh release create v8.0.0 output/vegas-dice-night.html --target "$GITHUB_SHA" --title "V8.0 · 入夜大厅与六人阵容" --notes-file RELEASE-V8.md
+          version=$(node -p "require('./package.json').version")
+          if ! gh release view "v$version" >/dev/null 2>&1; then
+            gh release create "v$version" output/vegas-dice-night.html --target "$GITHUB_SHA" --title "V$version · 入夜大厅与六人阵容" --notes-file RELEASE-V8.md
           fi

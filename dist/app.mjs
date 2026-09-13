@@ -25,7 +25,7 @@ const finalMood=createFinalMood({prefs:()=>prefs});
 const cinema=createCinema({names:new Proxy(NAMES,{get:(o,k)=>game?.players?.[k]?.name??o[k]}),colors:COLORS,skills:new Proxy(SKILLS,{get:(o,k)=>game?.players?.[k]?skillFor(game,Number(k)):o[k]}),die,prefs:()=>prefs});
 const rivalBeat=createRivalBeat({prefs:()=>prefs});
 const claimFeedback=createClaimFeedback({prefs:()=>prefs,hero:()=>game?.hero??1});
-const exam=createFinalExam({cinema,die,prefs:()=>prefs,onExit:()=>{app.inert=false;chosenHero=1;welcome();}});
+const exam=createFinalExam({cinema,die,prefs:()=>prefs,onExit:mode=>{app.inert=false;chosenHero=1;if(mode==='select')showSelection();else welcome();}});
 const tutorial=createTutorial({cinema,die,prefs:()=>prefs,onExit:mode=>{app.inert=false;chosenHero=1;if(mode==='exam'){startExam();return;}welcome();}});
 function startExam(){finalMood.update(false);stopTimer();claimFeedback.clear();if(modal.open)modal.close();dialogType='';app.inert=true;exam.open();}
 function startTutorial(){finalMood.update(false);claimFeedback.clear();stopTimer();if(modal.open)modal.close();dialogType='';app.inert=true;tutorial.open();}

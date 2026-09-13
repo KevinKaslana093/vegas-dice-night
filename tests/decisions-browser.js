@@ -18,7 +18,7 @@ async(page)=>{
    await press('retry');await choose(2);await press('invest');await press('roll');await choose(6);await press('invest');await p.waitForFunction(()=>document.querySelector('.exam-root')?.dataset.result==='lost');
    if(!(await p.locator('.exam-coach').innerText()).includes('撞数'))throw Error('Failure has no explanation');
    await press('retry');await press('skill');await p.locator('[data-shot="table:2:6"]').click();await press('fire');await choose(2);await press('invest');await press('roll');await choose(6);await press('invest');await p.waitForFunction(()=>document.querySelector('.exam-root')?.dataset.result==='won');
-   await press('finish');if(original!==await p.evaluate(()=>localStorage.getItem('vegas-night-save-v5')))throw Error('Exam overwrote main save');
+   await press('finish');await p.locator('.hero-stage[data-hero-stage="1"]').waitFor();if(await p.locator('.hero-roster [data-pick]').count()!==6)throw Error('Graduation did not open six-hero selection');if(original!==await p.evaluate(()=>localStorage.getItem('vegas-night-save-v5')))throw Error('Exam overwrote main save');
    if(errors.length)throw Error(errors.join(';'));results.push({width,preview:true,solo:true,twoWinningRoutes:true,failure:true,resume:true,saveIsolated:true});
   }finally{await ctx.close();}
  }

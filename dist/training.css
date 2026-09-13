@@ -1,0 +1,35 @@
+/* The guided and free-play tables share the production art and lobby palette. */
+.lesson-root{background:radial-gradient(ellipse at 45% 35%,#31423f44,transparent 65%),linear-gradient(115deg,#131923,#222b35);color:#e9edf0}
+.lesson-header{background:#171e28e8;border-color:#bac6cd30;padding:15px 4vw}
+.lesson-header span{color:#a9bec9;font:9px 'Segoe UI',sans-serif;letter-spacing:3px}
+.lesson-header h1{font-weight:500;color:#edf0ec}
+.lesson-header button,.lesson-root button.quiet,.lesson-options button,.exam-shot-group button{background:#222e3a;color:#dae3e8;border-color:#95a8b744;border-radius:2px}
+.lesson-progress{background:#12192380;color:#bacbd4}.lesson-progress>div{background:#aebec626}.lesson-progress i{background:#d9bf8c}
+.lesson-players{background:#17212bba;border:1px solid #a1b6c02c;border-radius:3px;gap:16px;padding:10px 14px}
+.lesson-players>div{flex:1}.lesson-players img{border-radius:3px}.lesson-players small{color:#b5c3ca}
+.lesson-board{isolation:isolate}
+.lesson-board:before{content:'';position:absolute;inset:0;background:url('./assets/velvet-table.webp') center/contain no-repeat;opacity:.72;z-index:-1;pointer-events:none}
+.lesson-orbit{border-color:#d2b57740;box-shadow:inset 0 0 65px #10182066;background:radial-gradient(ellipse,#15252388,transparent 65%)}
+.lesson-table{background-image:linear-gradient(#101b2394,#121d27ed 68%),url('./assets/casino-atlas.webp');background-size:100% 100%,300% 200%;background-position:center,var(--cx) var(--cy);border-color:#c3ad8066;border-radius:5px;opacity:.88;box-shadow:0 6px 18px #0005}
+.lt-1{--cx:0%;--cy:0%}.lt-2{--cx:50%;--cy:0%}.lt-3{--cx:100%;--cy:0%}.lt-4{--cx:0%;--cy:100%}.lt-5{--cx:50%;--cy:100%}.lt-6{--cx:100%;--cy:100%}
+.lesson-table header{color:#f2eddf}.lesson-table header>b{display:flex;align-items:center;flex:none}.lesson-table header .die{--ds:29px;padding:5px}
+.lesson-table header small{color:#b7c4cb}.lesson-notes>span{background:#15202fe6;border-color:#b9a077aa;color:#f0d398;border-radius:2px}.lesson-notes small{color:#b2c1cc}
+.lesson-counts{gap:3px}.lesson-counts>span{flex:1;text-align:center;background:#b3c5cf09;border:1px solid #b0bccb22;padding:4px 0;border-radius:2px}
+.lesson-counts .lesson-tied{background:#7a2639b0;border-color:#d66b80;color:#ffe1e8!important}
+.lesson-table footer{border-color:#b4bfc125;color:#bac7d0;line-height:1.5}.lesson-center>b{color:#e8d5ac}.lesson-center>span,.lesson-center>small{color:#a4b7bd}
+.lesson-root .lesson-focus{border-color:#efd092;box-shadow:0 0 0 2px #d7bb7938,0 0 23px #efc48828}
+.lesson-table.lesson-selected{border-color:#f3d595;box-shadow:0 0 0 2px #f3d59570,0 0 28px #e7bd6733;opacity:1}
+.lesson-controls{background:#19232eea;border-color:#a9bcc33c;border-radius:3px;border-left:3px solid #d5bb85}
+.lesson-action-title{color:#eddab3}.lesson-action-title small{color:#b7c8d1}
+.lesson-root .primary{background:linear-gradient(110deg,#f0e4c8,#ccd5d7);color:#242d36;border-radius:3px;box-shadow:0 2px 0 #7c807c}
+.lesson-coach{background:linear-gradient(110deg,#253140fa,#141d28);border-top:1px solid #a8bac267;box-shadow:0 -10px 35px #060c174d;gap:20px}
+.lesson-portrait{border-left-color:#a6bfce;background:#15212c;border-radius:2px}.lesson-portrait span{background:#131c29df;color:#dae1e7;letter-spacing:2px}
+.lesson-speaker{color:#e8d4a6}.lesson-speaker small{color:#9aaeba}.lesson-dialogue h2{color:#f0eeea;font-weight:500}.lesson-dialogue p{color:#c4d1d9}.lesson-instruction{color:#eed29b}.lesson-reply{padding-top:9px;border-top:1px solid #abc0cc20}
+.lesson-root .dicebutton .die{background-image:url('./assets/ivory-resin.webp')}.lesson-root .big-die .die{background-image:linear-gradient(#e6b94766,#f2d48e55),url('./assets/ivory-resin.webp')}
+.lesson-root .emptydie.big-ready{border-color:#d7b469;color:#eed399;background:#b28c3420}
+.exam-goal{background:#b6a16b18;border-color:#cab88345;color:#f0dbad}.exam-goal>span{color:#b4c6cf}.exam-coach .lesson-dialogue>p{color:#c4d1d9}.exam-result h2{color:#ecdbb9}.exam-result p,.exam-skill>p{color:#b7c8d1}.exam-shot-group button[aria-pressed=true]{background:#5b6251;border-color:#e3cd99;color:#fff2cc}
+.exam-root .endgame-strip{background:#1b2932;border-color:#9db9c236}.lesson-payout p{color:#bbcad1}
+@media(max-width:650px){.lesson-header{padding:10px 15px}.lesson-header h1{font-size:17px;letter-spacing:1px}.lesson-players{gap:5px;padding:7px 3px}.lesson-players>div{font-size:9px}.lesson-players small{font-size:8px}.lesson-table{padding:6px;width:103px}.lesson-table header .die{--ds:21px;padding:4px;gap:2px}.lesson-table header{gap:4px;font-size:9px}.lesson-table header small{font-size:8px}.lesson-counts{gap:2px;font-size:8px}.lesson-counts>span{padding:3px 0}.lesson-coach{gap:10px}.lesson-controls{padding:12px}.lesson-action-title{flex-wrap:wrap;gap:5px}.lesson-root .dice-row{gap:5px}.lesson-controls .die{--ds:30px}.lesson-controls .big-label{font-size:9px}.lesson-reply{padding-top:8px}.lesson-portrait span{letter-spacing:0}}
+@media(prefers-reduced-motion:reduce){.lesson-root .lesson-hot{animation:none}}
+.no-motion .lesson-root .lesson-hot{animation:none}
+.learning .claim-toast{background:#1b2636f5;border-color:#cfb37a99}.learning .claim-report{background:#172331;border-color:#a8bac33b}.learning .claim-report header>span,.learning .claim-report>small{color:#acbfcc}.learning .claim-transfer{background:#101b2bb3}.learning .claim-owner.unclaimed{color:#aabac5}

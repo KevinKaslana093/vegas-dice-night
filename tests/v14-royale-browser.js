@@ -1,0 +1,19 @@
+async(parent)=>{
+ const reports=[];
+ for(const width of [1440,390]){
+  const ctx=await parent.context().browser().newContext({viewport:{width,height:width>700?1000:844}}),p=await ctx.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
+  try{
+   await p.addInitScript(()=>{localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({fast:true,music:false,sound:false,motion:false,cutins:false,handoff:false}));const f=sessionStorage.getItem('royal-fixture');if(f){localStorage.setItem('vegas-night-save-v5',f);sessionStorage.removeItem('royal-fixture');localStorage.removeItem('vegas-night-practice-v1');}});
+   await p.goto('http://127.0.0.1:4317');await p.locator('#modal [data-action="royal-book"]').click();if(await p.locator('.royal-card').count()!==16)throw Error('16 modules missing');
+   await p.screenshot({path:'output/playwright/royal-book-'+width+'.png'});
+   await p.locator('[data-royal-practice="lucky"]').click();await p.locator('#app [data-action="roll"]').click();await p.waitForFunction(()=>!document.querySelector('#cinema[open]'));
+   await p.locator('#app .dicebutton[data-face="1"]').first().click();await p.locator('#app [data-action="confirm"]').click();await p.locator('[data-royal-option="n2"]').waitFor();await p.locator('[data-royal-option="n2"]').click();await p.waitForTimeout(1700);
+   await p.locator('#modal [data-action="exit-practice"]').click();if(await p.locator('#modal.lobby').count()!==1)throw Error('Did not restore lobby');
+   // Balanced magician: refresh during the decision, then commit the exact saved random result.
+   await p.evaluate(async()=>{const c=await import('./core.mjs'),g=c.createGame(4,Math.random,{hero:0,cast:[5,4,2,3],skills:true,balance:2,bigDice:true,rules:'classic',chipScore:true,seed:91});c.rollDice(g);sessionStorage.setItem('royal-fixture',JSON.stringify(g));});await p.reload();await p.locator('#modal [data-action="resume"]').click();await p.locator('#app [data-skill="0"]').first().click();await p.locator('input[name="v2-die"]').nth(0).check();await p.locator('input[name="v2-die"]').nth(1).check();await p.locator('input[name="v2-die"]').nth(2).check();await p.locator('[data-v2-confirm]').click();await p.locator('[data-royal-private]').click();await p.locator('[data-v2-resolve]').waitFor();
+   const before=await p.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')).skillPending);if(before.indices.length!==3)throw Error('Only two magician dice');await p.reload();await p.locator('#modal [data-action="resume"]').click();await p.locator('[data-royal-private]').click();const after=await p.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')).skillPending);if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Rerolled on reload');await p.locator('[data-v2-keep]').first().selectOption('new');await p.screenshot({path:'output/playwright/skill-choice-'+width+'.png'});await p.locator('[data-v2-resolve]').click();await p.waitForTimeout(150);const saved=await p.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')));if(saved.skillPending||saved.roll[0]!==before.fresh[0])throw Error('Choice was not committed');
+   await p.locator('#app [data-action="royal-book"]').click();const main=await p.evaluate(()=>localStorage.getItem('vegas-night-save-v5'));await p.locator('[data-royal-practice="choice"]').click();await p.reload();await p.locator('#modal [data-action="close"]').click();if(!await p.locator('.royal-practice-bar').isVisible())throw Error('Practice did not resume');await p.locator('#app [data-action="exit-practice"]').click();const restored=await p.evaluate(()=>localStorage.getItem('vegas-night-save-v5'));if(main!==restored)throw Error('Practice overwrote main save');
+   if(errors.length)throw Error(errors.join(';'));reports.push({width,modules:16,magicianSaved:true,practiceIsolated:true,errors});
+  }finally{await ctx.close();}
+ }return reports;
+}

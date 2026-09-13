@@ -1,0 +1,12 @@
+async(parent)=>{
+ const ctx=await parent.context().browser().newContext({viewport:{width:390,height:844}}),p=await ctx.newPage(),errors=[],reports=[];p.on('pageerror',e=>errors.push(e.message));try{
+  await p.addInitScript(()=>{localStorage.setItem('vegas-night-prefs-v2',JSON.stringify({sound:false,music:false,motion:false,cutins:false,fast:true,handoff:false}));const v=sessionStorage.getItem('v14-skill');if(v){localStorage.setItem('vegas-night-save-v5',v);sessionStorage.removeItem('v14-skill');}});await p.goto('http://127.0.0.1:4317');
+  for(const role of [2,3,4,6]){
+   await p.evaluate(async role=>{const c=await import('./core.mjs'),cast=[role,...[0,1,2,3,4,5,6].filter(n=>n!==role).slice(0,3)],g=c.createGame(4,Math.random,{seed:7,hero:0,skills:true,balance:2,bigDice:true,rules:'classic',cast});if(role===2){g.tables[0].counts[0]=1;g.players[0].left--;g.tables[0].counts[1]=2;g.players[1].left-=2;}if(role===3){g.players[0].wallet=[10000];g.players[0].cash=10000;g.players[0].notes=1;g.players[1].wallet=[50000,70000];g.players[1].cash=120000;g.players[1].notes=2;}if(role>=4)c.rollDice(g);if(!c.validSave(g))throw Error('invalid skill fixture');sessionStorage.setItem('v14-skill',JSON.stringify(g));},role);await p.reload();await p.locator('#modal [data-action="resume"]').click();await p.locator('#app [data-skill="0"]').first().click();
+   if(role===4){for(const i of [0,1]){await p.locator('input[name="v2-die"]').nth(i).check();const value=Number(await p.locator(`[data-v2-value="${i}"]`).inputValue());await p.locator(`[data-v2-value="${i}"]`).selectOption(String(value%6+1));}}
+   if(role===6){const value=await p.evaluate(()=>JSON.parse(localStorage.getItem('vegas-night-save-v5')).roll[0]);await p.locator('#v2-value').selectOption(String(value%6+1));await p.locator('#v2-discard').selectOption('1');}
+   await p.screenshot({path:'output/playwright/skill-v14-'+role+'.png'});await p.locator('[data-v2-confirm]').click();if(role===3){await p.locator('[data-royal-private]').click();await p.locator('[data-v2-resolve]').click();}await p.waitForTimeout(100);
+   const result=await p.evaluate(async()=>{const c=await import('./core.mjs'),g=JSON.parse(localStorage.getItem('vegas-night-save-v5'));return {valid:c.validSave(g),used:g.players[0].used,chips:g.players[0].chips,cash:g.players[0].cash,lost:g.players[0].lost};});if(!result.valid||!result.used)throw Error('Skill failed '+role);reports.push({role,...result});
+  }if(errors.length)throw Error(errors.join(';'));return {reports,errors};
+ }finally{await ctx.close();}
+}

@@ -2,13 +2,13 @@ import {roleOf,winners,NAMES,outcome,tableWeight} from './core.mjs';
 
 export const JOURNEY_KEY='vegas-night-journey-v1';
 export const ROLE_GUIDES=[
- ['铺开再收网','多一颗骰子，多一个占桌的机会；别让多出来的计数撞上对手。'],
+ ['铺开再收网','多两颗普通骰，多一些占桌的机会；别让多出来的计数撞上对手。'],
  ['把枪留给关键一颗','先看狙击后的排名：减少一颗，也可能把对手从撞数中救出来。'],
- ['小投入，换大位置','提前留一颗在目标桌；交易交出全部筹码，交换后仍可能撞数。'],
- ['挑钱包，等派彩','抽取按钞票张数等概率进行；比较人均票面，派彩后也能发动。'],
- ['一颗改点，整组改变','把大骰改到合适的一桌，先查看会不会多算一点而撞数。'],
- ['留下好骰，再变坏骰','保留已经合用的点数，只重掷一至两颗；结果仍然随机。'],
- ['算上加班的代价','整组改点前留出余量：随机损失可能恰好落在大骰上。']
+ ['小投入，换大位置','提前留一颗在目标桌；交易至少支付两枚筹码，以一颗普通骰换计数2或3，交换后仍可能撞数。'],
+ ['挑钱包，等派彩','先留一张低面额钞票，再从对手随机展示的两张里挑一张交换。'],
+ ['两颗改点，整组改变','把大骰改到合适的一桌，先查看会不会多算一点而撞数。'],
+ ['留下好骰，再变坏骰','保留已经合用的点数，任意选骰重掷，再逐颗选用新旧点数。'],
+ ['算上加班的代价','整组改点前留出余量：自己选择弃置代价，尽量保留大骰与关键点数。']
 ];
 export const CONTRACTS=[
  {id:'classic',name:'稳稳入袋',seed:13001,role:0,rules:'classic',skills:false,goal:'固定基础牌局，四轮后获胜。',test:r=>r.win},
@@ -65,7 +65,7 @@ export function commitJourney(p,g){
 export function createJourney({storage=localStorage}={}){
  let profile=readJourney(storage),saved=true;
  const save=()=>{try{storage.setItem(JOURNEY_KEY,JSON.stringify(profile));saved=true;}catch{saved=false;}};
- return {get profile(){return profile;},get saved(){return saved;},sync(g){const unlocked=commitJourney(profile,g);if(g.phase==='finished')save();return unlocked;},training(which){if(!['basics','exam'].includes(which))return;if(!profile.training.includes(which))profile.training.push(which);const s=journeyStats(profile);for(const b of BADGES)if(b.test(s,profile)&&!profile.unlocks.includes(b.id))profile.unlocks.push(b.id);save();},title(id){if(profile.unlocks.includes(id)){profile.title=id;save();}},feedback(data){profile.feedback.push({...data,date:new Date().toISOString()});profile.feedback=profile.feedback.slice(-100);save();},export(){return JSON.stringify({version:'13.0.0',...profile},null,2);}};
+ return {get profile(){return profile;},get saved(){return saved;},sync(g){const unlocked=commitJourney(profile,g);if(g.phase==='finished')save();return unlocked;},training(which){if(!['basics','exam'].includes(which))return;if(!profile.training.includes(which))profile.training.push(which);const s=journeyStats(profile);for(const b of BADGES)if(b.test(s,profile)&&!profile.unlocks.includes(b.id))profile.unlocks.push(b.id);save();},title(id){if(profile.unlocks.includes(id)){profile.title=id;save();}},feedback(data){profile.feedback.push({...data,date:new Date().toISOString()});profile.feedback=profile.feedback.slice(-100);save();},export(){return JSON.stringify({version:'14.0.0',...profile},null,2);}};
 }
 export function journeyMarkup(p,role=0){
  const total=journeyStats(p),r=journeyStats(p,role),m=mastery(r.xp),title=BADGES.find(b=>b.id===p.title)?.name||'今晚，由你入座';

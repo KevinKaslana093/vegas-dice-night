@@ -5,7 +5,7 @@ import {MUSIC_TRACKS} from '../dist/music.mjs';
 for(const track of Object.values(MUSIC_TRACKS))if(!fs.statSync('dist/'+track.src.replace('./','')).size)throw Error('Missing music '+track.title);
 for(const src of Object.values(CINEMA_ASSETS).flat()){if(!fs.statSync('dist/'+src.replace('./','')).size)throw Error('Missing cinema asset '+src);}
 for(const f of ['dist/index.html','dist/style.css','dist/app.mjs','dist/core.mjs']){if(!fs.statSync(f).size)throw Error(`Empty ${f}`);}
-for(const f of ['dist/app.mjs','dist/identity.mjs','dist/music.mjs','dist/core.mjs','dist/cinema.mjs','dist/tutorial.mjs','dist/claims.mjs','dist/decisions.mjs','dist/exam.mjs','dist/encore.mjs','dist/finale.mjs','dist/basics.mjs','dist/journey.mjs','dist/experience.mjs'])execFileSync(process.execPath,['--check',f]);
+for(const f of ['dist/balance.mjs','dist/royale.mjs','dist/royale-ui.mjs','dist/app.mjs','dist/identity.mjs','dist/music.mjs','dist/core.mjs','dist/cinema.mjs','dist/tutorial.mjs','dist/claims.mjs','dist/decisions.mjs','dist/exam.mjs','dist/encore.mjs','dist/finale.mjs','dist/basics.mjs','dist/journey.mjs','dist/experience.mjs'])execFileSync(process.execPath,['--check',f]);
 const html=fs.readFileSync('dist/index.html','utf8');
 for(const match of html.matchAll(/(?:href|src)="\.\/([^"?#]+)"/g))if(!fs.existsSync('dist/'+match[1]))throw Error('Missing '+match[1]);
 console.log('Static files and JavaScript verified.');

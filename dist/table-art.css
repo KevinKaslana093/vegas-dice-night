@@ -1,0 +1,40 @@
+/* V11: table environment only; casino cards and their hit areas retain V10. */
+:root{--table-surface:url('./assets/crimson-table-v11.webp');--table-brass:#d4b47a;--table-ivory:#f3e7d2;--plaque-shape:polygon(12% 0,88% 0,100% 10%,100% 90%,88% 100%,12% 100%,0 90%,0 10%)}
+#app .arena::before,.lesson-board::before{content:'';position:absolute;inset:1% -1%;background:var(--table-surface) center/100% 100% no-repeat;opacity:1;border:0;border-radius:0;box-shadow:none;pointer-events:none;z-index:-1;filter:drop-shadow(0 12px 10px #0008)}
+#app .arena .orbit,.lesson-board .lesson-orbit{border:0;background:none;box-shadow:none;animation:none}
+#app .arena .orbit::after{display:none}
+.table-plaque,.lesson-board .lesson-center{isolation:isolate;pointer-events:none;color:var(--table-ivory);padding:17px 12px 15px;filter:drop-shadow(0 5px 4px #080305bb)}
+.table-plaque::before,.lesson-board .lesson-center::before{content:'';position:absolute;inset:0;z-index:-2;clip-path:var(--plaque-shape);background:linear-gradient(125deg,#f7e2ad,#806039 24%,#c5a266 49%,#624329 73%,#efce8b);pointer-events:none}
+.table-plaque::after,.lesson-board .lesson-center::after{content:'';position:absolute;inset:2px;z-index:-1;clip-path:var(--plaque-shape);background:repeating-linear-gradient(115deg,#ffffff02 0 1px,transparent 1px 5px),linear-gradient(140deg,#24181a,#100b0d 58%,#30131b);box-shadow:inset 0 0 25px #0009;pointer-events:none}
+#app .table-plaque{width:25%;max-width:235px;min-width:100px}
+#app .table-plaque .center-star{height:42px;margin:0 auto 10px;position:relative}
+#app .table-plaque .center-star .chip-mark{width:42px;height:42px;filter:drop-shadow(0 2px 1px #000)}
+#app .table-plaque .center-star::before,#app .table-plaque .center-star::after{content:'';position:absolute;top:50%;width:calc(50% - 30px);height:1px;background:linear-gradient(90deg,transparent,#b8945e);left:0}
+#app .table-plaque .center-star::after{left:auto;right:0;transform:rotate(180deg)}
+#app .table-plaque .eyebrow{font-size:9px;letter-spacing:.18em;color:#ceaf7d}
+#app .table-plaque .pot{font:42px Georgia,'Microsoft YaHei',serif;color:#f2dcaf;margin:10px 0 7px;line-height:1.15;text-shadow:0 2px #000}
+#app .table-plaque.table-inspecting .pot{font:600 24px 'Microsoft YaHei',sans-serif;line-height:1.25}
+#app .table-plaque p{font-size:10px;line-height:1.65;margin:0 0 13px;color:#bda991}
+#app .table-plaque .center-turn{display:block;margin:0 -3px;padding:8px 4px;border:0;border-top:1px solid #e4c78a;border-bottom:2px solid #6c4b31;border-radius:0;background:linear-gradient(105deg,#ead5ac,#c5a473);color:#211316;font-size:12px;font-weight:600;clip-path:polygon(4% 0,100% 0,96% 100%,0 100%);box-shadow:0 2px #000}
+#app .table-plaque>small{font-size:10px;line-height:1.6;margin-top:9px;color:#d2be9f}
+.lesson-board .lesson-center{width:25%;min-width:96px;max-width:210px;padding:22px 8px;gap:10px}
+.lesson-board .lesson-center>span{color:#ceaf7d;letter-spacing:.13em;font-size:8px}
+.lesson-board .lesson-center>b{color:#f2dcaf;white-space:normal;font-size:17px;line-height:1.5}
+.lesson-board .lesson-center>small{color:#c6b294;line-height:1.65}
+/* The first lesson keeps its enlarged single casino, on the same material. */
+.basic-play{position:relative;isolation:isolate;padding:26px 22px;gap:24px}
+.basic-play::before{content:'';position:absolute;inset:0 -12px;z-index:-1;background:var(--table-surface) center/100% 100% no-repeat;pointer-events:none;filter:drop-shadow(0 6px 8px #0007)}
+.basic-play .basic-controls{background:linear-gradient(140deg,#26191bf5,#100b0df7);border:1px solid #bb945a;border-radius:0;box-shadow:inset 0 0 0 3px #171012,0 4px 10px #0006}
+.basic-play .basic-earned strong{color:#f2dcaf}
+@media(max-width:1200px){#app .table-plaque{padding:13px 9px}#app .table-plaque .pot{font-size:33px}#app .table-plaque.table-inspecting .pot{font-size:20px}#app .table-plaque .center-turn{font-size:11px}}
+@media(max-width:650px){
+ #app .arena::before,.lesson-board::before{inset:3% -1%;filter:drop-shadow(0 5px 4px #0008)}
+ #app .table-plaque{width:27%;padding:12px 7px 10px}
+ #app .table-plaque .center-star{height:30px;margin-bottom:6px}#app .table-plaque .center-star .chip-mark{width:30px;height:30px}
+ #app .table-plaque .center-star::before,#app .table-plaque .center-star::after{width:calc(50% - 21px)}
+ #app .table-plaque .eyebrow{font-size:6px;letter-spacing:.09em}#app .table-plaque .pot{font-size:27px;margin:7px 0}
+ #app .table-plaque.table-inspecting .pot{font-size:15px}#app .table-plaque p{font-size:8px;margin-bottom:8px}
+ #app .table-plaque .center-turn{font-size:9px;padding:7px 2px}#app .table-plaque>small{font-size:8px;margin-top:6px}
+ .lesson-board .lesson-center{padding:15px 6px;gap:8px}.lesson-board .lesson-center>span{font-size:6px;letter-spacing:.06em}.lesson-board .lesson-center>b{font-size:12px}.lesson-board .lesson-center>small{font-size:8px}
+ .basic-play{padding:17px 7px;gap:12px}.basic-play::before{inset:0 -6px;background-size:auto 100%;border-radius:28px;opacity:.85}
+}
